@@ -1,18 +1,23 @@
 package main
 
 import "fmt"
-import "simple-product-api/handler"
-import "simple-product-api/config"
+import h "simple-product-api/handler"
+import c "simple-product-api/config"
+import r "simple-product-api/route"
 import "net/http"
 
 func main(){
 	//init DB
-	db := config.Connect()
+	db := c.Connect()
 	defer db.Close()
 
 	//Konek instans DB handler dengan database
-	h := handler.ProductHandler{DB: db}
-	http.HandleFunc("/product", h.GetProduct)
+	handler := h.ProductHandler{DB: db}
+	route := r.ProductRoute{Handler: &handler}
+
+	http.HandleFunc("/product", handler.GetProduct) //GET
+	http.HandleFunc("/", handler.InsertProduct) //POST
+	http.HandleFunc("/product/", route.ProductRoutingByID) //PUT & DELETE
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
