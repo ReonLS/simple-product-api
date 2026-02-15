@@ -21,3 +21,17 @@ func (pr *ProductRoute) ProductRoutingByID(rw http.ResponseWriter, r *http.Reque
 		pr.Handler.DeleteProductByID(rw, r)
 	}
 }
+
+func (pr *ProductRoute) ProductRouting(rw http.ResponseWriter, r *http.Request) {
+	//alur komunikasi : main -> route -> handler -> db
+	//handler buat instans db, route buat instans
+
+	//cek method dari request terus switch berdasarkan case
+	switch r.Method {
+	case "GET":
+		pr.Handler.GetProduct(rw, r)
+
+	case "POST":
+		pr.Handler.InsertProduct(rw, r)
+	}
+}
