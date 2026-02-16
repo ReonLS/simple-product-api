@@ -8,30 +8,10 @@ type ProductRoute struct{
 	Handler *handler.ProductHandler
 }
 
-func (pr *ProductRoute) ProductRoutingByID(rw http.ResponseWriter, r *http.Request) {
-	//alur komunikasi : main -> route -> handler -> db
-	//handler buat instans db, route buat instans
-
-	//cek method dari request terus switch berdasarkan case
-	switch r.Method {
-	case "PUT":
-		pr.Handler.UpdateProductByID(rw, r)
-
-	case "DELETE":
-		pr.Handler.DeleteProductByID(rw, r)
-	}
-}
-
-func (pr *ProductRoute) ProductRouting(rw http.ResponseWriter, r *http.Request) {
-	//alur komunikasi : main -> route -> handler -> db
-	//handler buat instans db, route buat instans
-
-	//cek method dari request terus switch berdasarkan case
-	switch r.Method {
-	case "GET":
-		pr.Handler.GetProduct(rw, r)
-
-	case "POST":
-		pr.Handler.InsertProduct(rw, r)
-	}
+//centralized handler func for /product
+func (pr *ProductRoute) Product (mux *http.ServeMux){
+	mux.HandleFunc("GET /product", pr.Handler.GetProduct)
+	mux.HandleFunc("POST /product", pr.Handler.InsertProduct)
+	mux.HandleFunc("PUT /product/{id}", pr.Handler.UpdateProductByID)
+	mux.HandleFunc("DELETE /product/{id}", pr.Handler.DeleteProductByID)
 }

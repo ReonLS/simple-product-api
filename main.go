@@ -13,12 +13,16 @@ func main() {
 	db := c.Connect()
 	defer db.Close()
 
-	//Konek instans DB handler dengan database
-	handler := h.ProductHandler{DB: db}
-	route := r.ProductRoute{Handler: &handler}
+	//Dependency injection
+	prodHand := h.ProductHandler{DB: db}
+	prodRoute := r.ProductRoute{Handler: &prodHand}
 
-	http.HandleFunc("/product", route.ProductRouting)      //GET & POST
-	http.HandleFunc("/product/", route.ProductRoutingByID) //PUT & DELETE
+	mux := http.NewServeMux()
+	prodRoute.Product(mux)
+
+	//mirip grouping di gin
+	v1 := http.NewServeMux()
+	v1.Handle("/api/v1/", http.StripPrefix("/api/v1", mux))
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
