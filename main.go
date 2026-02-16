@@ -20,11 +20,7 @@ func main() {
 	mux := http.NewServeMux()
 	prodRoute.Product(mux)
 
-	//mirip grouping di gin
-	v1 := http.NewServeMux()
-	v1.Handle("/api/v1/", http.StripPrefix("/api/v1", mux))
-
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
 		fmt.Println("Error: ", err.Error())
 	}
