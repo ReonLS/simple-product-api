@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	m "simple-product-api/models"
+	"simple-product-api/models"
+	"simple-product-api/service"
 	"strconv"
 	"strings"
 )
@@ -13,58 +13,28 @@ import (
 // buat instans DB, jdi layer handler bisa exec query
 // sebenarnya ini layer repo, yg diakses service, yg diakses handler tp for now okela
 type ProductHandler struct {
-	DB *sql.DB
+	Service *service.ProductService
 }
 
 // Fungsi utama responds to a request (getting all product)
 func (ph *ProductHandler) GetProduct(rw http.ResponseWriter, r *http.Request) {
-
-	//Alur: setheader -> DB Query -> Append Data -> convert to Json -> Response Writer
+	//Alur : Nerima response, encode jadi json 
 	rw.Header().Set("Content-Type", "application/json")
-	data := []m.Product{}
-	fmt.Println("Masuk GET")
 
-	//ini rows contain instans data hasil query
-	rows, err := ph.DB.Query("Select * from product")
+	products, err := ph.Service.GetProduct()
 	if err != nil {
-		//critical error, generate response code server fault
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
+		http.Error(rw, "", http.StatusBadRequest)
 	}
-	if rows.Err() != nil {
-		//critical error, generate response code server fault
-		http.Error(rw, rows.Err().Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		//tampungan per row, buat append ke data
-		temp := m.Product{}
-
-		if err := rows.Scan(&temp.Id, &temp.Namaprod, &temp.Kategori, &temp.Price, &temp.Stock); err != nil {
-			//critical error, generate response code server fault
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		data = append(data, temp)
-	}
-	//kalo disini berarti proses aman, set status code success
+	//berarti aman
 	rw.WriteHeader(http.StatusOK)
 
 	//Best Approach, more memory efficient
-	err = json.NewEncoder(rw).Encode(&data)
+	err = json.NewEncoder(rw).Encode(products)
 	if err != nil {
 		//server-side error
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	//previous approach
-	// jsonpayload, err := json.Marshal(data)
-	// if err != nil {
-	// 	fmt.Println("Error: ", err.Error())
-	// }
-	// rw.Write(jsonpayload)
 }
 
 func (ph *ProductHandler) InsertProduct(rw http.ResponseWriter, r *http.Request) {
@@ -73,8 +43,8 @@ func (ph *ProductHandler) InsertProduct(rw http.ResponseWriter, r *http.Request)
 	fmt.Println("Masuk POST")
 
 	//membuat tampungan
-	var product m.Product
-	err := json.NewDecoder(r.Body).Decode(&product)
+	var request models.ProductRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
 	defer r.Body.Close()
 
 	if err != nil {
@@ -83,34 +53,25 @@ func (ph *ProductHandler) InsertProduct(rw http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	//inserting product with products.property
-	query := "Insert into product (namaprod, kategori, price, stock) values (?,?,?,?)"
-	//kalo exec, jgn pake pointer tp pake value
-	result, err := ph.DB.Exec(query, product.Namaprod, product.Kategori, product.Price, product.Stock)
-
+	//logikanya gagal kebentuk, berarti user kirim faulty request
+	response, err := ph.Service.InsertProduct(request)
 	if err != nil {
-		http.Error(rw, "", http.StatusInternalServerError)
+		http.Error(rw, "", http.StatusBadRequest)
 		return
 	}
 
 	//return status http object berhasil dibentuk
 	rw.WriteHeader(http.StatusCreated)
 
-	//ngambil index id auto increment, diassign ke product untuk diencode
-	index, err := result.LastInsertId()
-	if err != nil {
-		http.Error(rw, "", http.StatusInternalServerError)
-	}
-	product.Id = int(index)
-
 	//tampilin di endpoint sbg response request client
-	json.NewEncoder(rw).Encode(&product)
+	json.NewEncoder(rw).Encode(response)
 }
 
 func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Request) {
-	//alur : set header, take id from url.path, decode req.body, exec with decoded property, generate respons
+	//alur : set header, take id from url.path, decode req.body, call service func, generate respons
 	rw.Header().Set("Content-Type", "application/json")
 	
+	//parsing id dari path
 	path := r.URL.Path //{/{id}}
 	stringId := strings.TrimPrefix(path, "/product/") //{id}
 	fmt.Println("Masuk PUT", stringId)
@@ -122,40 +83,27 @@ func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Requ
 	}
 
 	//tampungan decode
-	var update m.Product
+	var request models.ProductRequest
 
-	err = json.NewDecoder(r.Body).Decode(&update)
+	err = json.NewDecoder(r.Body).Decode(&request)
 	defer r.Body.Close()
 
 	if err != nil {
 		http.Error(rw, "", http.StatusBadRequest)
 		return
 	}
-	//update id tampungan, jd incase client kirim id di body, ketimpa ama id URL
-	update.Id = id
 
-	//db exec
-	query := "update product set namaprod=?, kategori=?, price=?, stock=? where id = ?"
-	res, err := ph.DB.Exec(query, update.Namaprod, update.Kategori, update.Price, update.Stock, id)
+	//panggil service func
+	response, err := ph.Service.UpdateProductByID(id, request)
 	if err != nil {
-		//karna inputan user yg salah
 		http.Error(rw, "", http.StatusBadRequest)
 		return
 	}
-	rowsAff, err := res.RowsAffected()
-	if err != nil {
-		http.Error(rw, "", http.StatusInternalServerError)
-		return
-	}
-	//berarti gk ada proses update
-	if rowsAff == 0 {
-		http.Error(rw, "", http.StatusNotFound)
-		return
-	}
+	//berarti aman
 	rw.WriteHeader(http.StatusOK)
 
 	//encode update untuk write ke stream
-	err = json.NewEncoder(rw).Encode(&update)
+	err = json.NewEncoder(rw).Encode(response)
 	if err != nil {
 		http.Error(rw, "", http.StatusInternalServerError)
 		return
@@ -178,20 +126,14 @@ func (ph *ProductHandler) DeleteProductByID(rw http.ResponseWriter, r *http.Requ
 	}
 
 	//jalankan query
-	res, err := ph.DB.Exec("delete from product where id = ?", id)
+	response, err := ph.Service.DeleteProductByID(id)
 	if err != nil {
 		http.Error(rw, "", http.StatusBadRequest)
 		return
 	}
-
-	rowsAff, err := res.RowsAffected()
-	if err != nil {
-		http.Error(rw, "", http.StatusInternalServerError)
-		return
-	}
-	if rowsAff == 0 {
-		http.Error(rw, "", http.StatusNotFound)
-		return
-	}
+	//berarti aman
 	rw.WriteHeader(http.StatusOK)
+
+	//tembak ke stream
+	json.NewEncoder(rw).Encode(response)
 }

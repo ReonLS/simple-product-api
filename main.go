@@ -3,19 +3,23 @@ package main
 import (
 	"fmt"
 	"net/http"
-	c "simple-product-api/config"
-	h "simple-product-api/handler"
-	r "simple-product-api/route"
+	"simple-product-api/config"
+	"simple-product-api/handler"
+	"simple-product-api/route"
+	"simple-product-api/repository"
+	"simple-product-api/service"
 )
 
 func main() {
 	//init DB
-	db := c.Connect()
+	db := config.Connect()
 	defer db.Close()
 
 	//Dependency injection
-	prodHand := h.ProductHandler{DB: db}
-	prodRoute := r.ProductRoute{Handler: &prodHand}
+	repository := repository.ProductRepo{DB: db}
+	service := service.ProductService{Repo: &repository}
+	handler := handler.ProductHandler{Service: &service}
+	prodRoute := route.ProductRoute{Handler: &handler}
 
 	mux := http.NewServeMux()
 	prodRoute.Product(mux)
