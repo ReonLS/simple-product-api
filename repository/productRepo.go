@@ -93,6 +93,8 @@ func (pr *ProductRepo) UpdateProductByID(id int, req models.ProductRequest) (mod
 	return product, nil
 }
 
+// in proper api, query ttp delete unique product id, tp middleware yg bakal authenticate user
+// untuk ensure product ini milik currentuserloginid
 func (pr *ProductRepo) DeleteProductByID(id int) (models.Product, error) {
 	//Alur : Jalanin query, return domain struct (ngamnbil id dari hasil auto increment table)
 
