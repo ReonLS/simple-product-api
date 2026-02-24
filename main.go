@@ -16,10 +16,10 @@ func main() {
 	defer db.Close()
 
 	//products
-	prodRepo := repository.ProductRepo{DB: db}
-	prodService := service.ProductService{Repo: &prodRepo}
-	prodHandler := handler.ProductHandler{Service: &prodService}
-	prodRoute := route.Route{ProdHandler: &prodHandler}
+	prodRepo := repository.NewProductRepo(db)
+	prodService := service.NewProductService(*prodRepo)
+	prodHandler := handler.NewProductHandler(*prodService)
+	prodRoute := route.Route.ProdHandler
 
 	//user
 	userRepo := repository.UserRepo{DB: db}

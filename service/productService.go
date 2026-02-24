@@ -4,7 +4,12 @@ import "simple-product-api/repository"
 import "simple-product-api/models"
 
 type ProductService struct{
-	Repo *repository.ProductRepo
+	Repo repository.ProductRepo
+}
+
+
+func NewProductService(repo repository.ProductRepo) *ProductService{
+	return &ProductService{Repo: repo}
 }
 
 func (pr *ProductService) ToProductResponse(p models.Product) models.ProductResponse{

@@ -10,10 +10,14 @@ type ProductRepo struct {
 	DB *sql.DB
 }
 
-func (pr *ProductRepo) GetProduct() ([]models.Product, error) {
+func NewProductRepo(db *sql.DB) *ProductRepo{
+	return &ProductRepo{DB: db}
+}
+
+func (pr *ProductRepo) GetProduct() ([]*models.Product, error) {
 	//Alur : Generate query, return domain struct
 
-	var data []models.Product
+	var data []*models.Product
 
 	rows, err := pr.DB.Query("Select * from product")
 	if err != nil {
