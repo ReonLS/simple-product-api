@@ -18,7 +18,7 @@ func ToAdminUserResponse(user *models.User) (*models.AdminUserResponse){
 		Id: user.Id,
 		Name: user.Name,
 		Email: user.Email,
-		IsAdmin: user.IsAdmin,
+		Role: user.Role,
 	}
 }
 
@@ -69,14 +69,14 @@ func (us *UserService) CreateUser(req *models.UserRequest) (*models.AdminUserRes
 	var data = &models.User{
 		Name: req.Name,
 		Email: req.Email,
-		IsAdmin: false,
+		Role: models.RoleUser,
 	}
 
 	data, err := us.Repo.CreateUser(data)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	return ToAdminUserResponse(data), nil
 }
 
@@ -92,6 +92,7 @@ func (us *UserService) UpdateUser(id int, req *models.UserRequest) (*models.User
 		return nil, err
 	}
 
+	//if userRole = admin, toAdminUserResponse
 	return ToUserResponse(data), nil
 }
 

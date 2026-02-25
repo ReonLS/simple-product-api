@@ -3,11 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"net/mail"
 	"simple-product-api/models"
 	"simple-product-api/service"
 	"strconv"
 	"strings"
-	"net/mail"
 )
 
 type UserHandler struct {
@@ -75,10 +75,11 @@ func (uh *UserHandler) CreateUser(rw http.ResponseWriter, r *http.Request){
 	//decode
 	var request = &models.UserRequest{}
 	err := json.NewDecoder(r.Body).Decode(&request)
+	
 	defer r.Body.Close()
 
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, "Err Request", http.StatusBadRequest)
 		return
 	}
 
@@ -90,7 +91,7 @@ func (uh *UserHandler) CreateUser(rw http.ResponseWriter, r *http.Request){
 
 	response, err := uh.Service.CreateUser(request)
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 	rw.WriteHeader(http.StatusCreated)
@@ -121,7 +122,7 @@ func (uh *UserHandler) UpdateUser(rw http.ResponseWriter, r *http.Request){
 	defer r.Body.Close()
 
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 	}
 
 	//validate email
@@ -132,7 +133,7 @@ func (uh *UserHandler) UpdateUser(rw http.ResponseWriter, r *http.Request){
 
 	response, err := uh.Service.UpdateUser(id, request)
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
@@ -153,13 +154,13 @@ func (uh *UserHandler) DeleteUser(rw http.ResponseWriter, r *http.Request){
 	idstring := strings.TrimPrefix(path, "/user/")
 	id, err := strconv.Atoi(idstring)
 	if err != nil {
-		http.Error(rw, "", http.StatusInternalServerError)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	response, err := uh.Service.DeleteUser(id)
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 	rw.WriteHeader(http.StatusOK)

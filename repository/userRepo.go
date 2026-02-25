@@ -28,7 +28,7 @@ func (ur *UserRepo) GetAllUsers()([]*models.User, error){
 	for rows.Next() {
 		var row = &models.User{}
 
-		if err := rows.Scan(&row.Id, &row.Name, &row.Email, &row.IsAdmin); err != nil{
+		if err := rows.Scan(&row.Id, &row.Name, &row.Email, &row.Role); err != nil{
 			return nil, err
 		}
 		data = append(data, row)
@@ -43,7 +43,7 @@ func (ur *UserRepo) GetUserbyId(id int)(*models.User, error){
 
 	rows := ur.DB.QueryRow("Select * from user where id = ?", id)
 
-	if err := rows.Scan(&data.Id, &data.Name, &data.Email, &data.IsAdmin); err != nil{
+	if err := rows.Scan(&data.Id, &data.Name, &data.Email, &data.Role); err != nil{
 		return nil, err
 	}
 
@@ -52,10 +52,9 @@ func (ur *UserRepo) GetUserbyId(id int)(*models.User, error){
 
 func (ur *UserRepo) CreateUser(model *models.User)(*models.User, error) {
 	//Alur : buat object tampungan untuk simpan request ke domain struct
-	
 
-	query := "Insert into user (name, email, isAdmin) values (?,?,?)"
-	result, err := ur.DB.Exec(query, model.Name, model.Email, model.IsAdmin)
+	query := "Insert into user (name, email, role) values (?,?,?)"
+	result, err := ur.DB.Exec(query, model.Name, model.Email, model.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +64,7 @@ func (ur *UserRepo) CreateUser(model *models.User)(*models.User, error) {
 		return nil, err
 	}
 	if rows == 0 {
-		return nil, errors.New("User Not Created")
+		return nil, err
 	}
 
 	id, err := result.LastInsertId()
@@ -95,11 +94,10 @@ func (ur *UserRepo) UpdateUser(id int, model *models.User)(*models.User, error){
 	}
 
 	//ambil isAdmin
-	query = "Select isAdmin from user where id = ?"
-	if err := ur.DB.QueryRow(query).Scan(&model.IsAdmin); err != nil {
+	query = "Select id,role from user where id = ?"
+	if err := ur.DB.QueryRow(query, id).Scan(&model.Id, &model.Role); err != nil {
 		return nil, err
 	}
-
 	return model, nil
 }
 
@@ -108,8 +106,8 @@ func (ur *UserRepo) DeleteUser(id int)(*models.User, error){
 	var data = &models.User{}
 
 	//buat response
-	err := ur.DB.QueryRow("select name,email,isAdmin from user where id = ?", id).
-		Scan(&data.Name, &data.Email, &data.IsAdmin)
+	err := ur.DB.QueryRow("select id, name,email,role from user where id = ?", id).
+		Scan(&data.Id, &data.Name, &data.Email, &data.Role)
 	if err != nil {
 		return nil, err
 	}

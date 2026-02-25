@@ -12,25 +12,39 @@ type UserRepository interface{
 type User struct{
 	Id int
 	Name string
+	Password string
 	Email string
-	IsAdmin bool
+	Role Role
 }
 
-//hanya admin yg bisa request user (PUSH)
+type Role string
+
+const (
+	RoleUser Role = "User"
+	RoleAdmin Role = "Admin"
+)
+
+//Update & Register
 type UserRequest struct{
-	Name string `json:"name" binding:"required"`
-	Email string `json:"email" binding:"required"`
+	Name string `json:"name"`
+	Email string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginRequest struct {
+	Email string `json:"email"`
+	Password string `json:"password"`
 }
 
 type UserResponse struct{
-	Id int `json:"id" binding:"required"`
-	Name string `json:"name" binding:"required"`
-	Email string `json:"email" binding:"required"`
+	Id int `json:"id"`
+	Name string `json:"name"`
+	Email string `json:"email"`
 }
 
 type AdminUserResponse struct{
-	Id int `json:"id" binding:"required"`
-	Name string `json:"name" binding:"required"`
-	Email string `json:"email" binding:"required"`
-	IsAdmin bool `json:"isAdmin" binding:"required"`
+	Id int `json:"id"`
+	Name string `json:"name"`
+	Email string `json:"email"`
+	Role Role `json:"role"`
 }
