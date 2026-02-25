@@ -50,11 +50,11 @@ func (ur *UserRepo) GetUserbyId(id int)(*models.User, error){
 	return data, nil
 }
 
-func (ur *UserRepo) CreateUser(model *models.User)(*models.User, error) {
+func (ur *UserRepo) Register(model *models.User)(*models.User, error) {
 	//Alur : buat object tampungan untuk simpan request ke domain struct
 
-	query := "Insert into user (name, email, role) values (?,?,?)"
-	result, err := ur.DB.Exec(query, model.Name, model.Email, model.Role)
+	query := "Insert into user (name, password, email, role) values (?,?,?,?)"
+	result, err := ur.DB.Exec(query, model.Name, model.Password, model.Email, model.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +77,25 @@ func (ur *UserRepo) CreateUser(model *models.User)(*models.User, error) {
 	return model, nil
 }
 
+func (ur *UserRepo) Login(email string) (*models.User, error){
+	//Alur: get user by email, return domain struct
+	var model = &models.User{}
+
+	query := "select * from user where email = ?"
+	err := ur.DB.QueryRow(query, email).
+	Scan(&model.Id, &model.Name, &model.Password, &model.Email, &model.Role)
+
+	if err != nil {
+		return nil, err
+	}
+	return model, nil
+}
+
 func (ur *UserRepo) UpdateUser(id int, model *models.User)(*models.User, error){
 	//Alur: Execute query, return domain struct
 	//exec query
-	query := "update user set name=?, email=? where id = ?"
-	result, err := ur.DB.Exec(query, model.Name, model.Email, id)
+	query := "update user set name=?, password=? , email=? where id = ?"
+	result, err := ur.DB.Exec(query, model.Name, model.Password, model.Email, id)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +107,7 @@ func (ur *UserRepo) UpdateUser(id int, model *models.User)(*models.User, error){
 		return nil, errors.New("User Not Updated")
 	}
 
-	//ambil isAdmin
+	//ambil role
 	query = "Select id,role from user where id = ?"
 	if err := ur.DB.QueryRow(query, id).Scan(&model.Id, &model.Role); err != nil {
 		return nil, err

@@ -24,7 +24,7 @@ func (r *Route) Product (mux *http.ServeMux){
 func (r *Route) User (mux *http.ServeMux){
 	mux.HandleFunc("GET /user", r.UserHandler.GetAllUsers)
 	mux.HandleFunc("GET /user/{id}", r.UserHandler.GetUserbyId)
-	mux.HandleFunc("POST /user", r.UserHandler.CreateUser)
+	mux.HandleFunc("POST /user", r.UserHandler.Register)
 	mux.HandleFunc("PUT /user/{id}", r.UserHandler.UpdateUser)
 	mux.HandleFunc("DELETE /user/{id}", r.UserHandler.DeleteUser)
 }

@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"net/mail"
 	"simple-product-api/models"
 	"simple-product-api/service"
 	"strconv"
@@ -16,12 +15,6 @@ type UserHandler struct {
 
 func NewUserHandler(service *service.UserService) *UserHandler{
 	return &UserHandler{Service: service}
-}
-
-//mungkin perlu implement unique email, harusnya ini di models
-func (uh *UserHandler) validateEmail(email string) error {
-	_, err := mail.ParseAddress(email)
-	return err
 }
 
 func (uh *UserHandler) GetAllUsers(rw http.ResponseWriter, r *http.Request){
@@ -69,7 +62,7 @@ func (uh *UserHandler) GetUserbyId(rw http.ResponseWriter, r *http.Request){
 	}
 }
 
-func (uh *UserHandler) CreateUser(rw http.ResponseWriter, r *http.Request){
+func (uh *UserHandler) Register(rw http.ResponseWriter, r *http.Request){
 	rw.Header().Set("Content-Type", "application/json")
 
 	//decode
@@ -83,18 +76,41 @@ func (uh *UserHandler) CreateUser(rw http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	//validate email
-	if err := uh.validateEmail(request.Email); err != nil {
-		http.Error(rw, "Email not valid", http.StatusBadRequest)
-		return
-	}
-
-	response, err := uh.Service.CreateUser(request)
+	response, err := uh.Service.Register(request)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 	rw.WriteHeader(http.StatusCreated)
+
+	err = json.NewEncoder(rw).Encode(response)
+	if err != nil {
+		//server-side error
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (uh *UserHandler) Login(rw http.ResponseWriter, r *http.Request){
+	rw.Header().Set("Content-Type", "application/json")
+
+	//decode
+	var request = &models.LoginRequest{}
+	err := json.NewDecoder(r.Body).Decode(&request)
+	
+	defer r.Body.Close()
+
+	if err != nil {
+		http.Error(rw, "Error Request", http.StatusBadRequest)
+		return
+	}
+
+	response, err := uh.Service.Login(request)
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(rw).Encode(response)
 	if err != nil {
@@ -123,12 +139,6 @@ func (uh *UserHandler) UpdateUser(rw http.ResponseWriter, r *http.Request){
 
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
-	}
-
-	//validate email
-	if err := uh.validateEmail(request.Email); err != nil {
-		http.Error(rw, "Email not valid", http.StatusBadRequest)
-		return
 	}
 
 	response, err := uh.Service.UpdateUser(id, request)

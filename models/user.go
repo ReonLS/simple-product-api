@@ -4,9 +4,10 @@ package models
 type UserRepository interface{
 	GetAllUsers()([]*User, error)
 	GetUserbyId(id int)(*User, error)
-	CreateUser(model *User)(*User, error)
+	Register(model *User)(*User, error)
 	UpdateUser(id int, model *User)(*User, error)
 	DeleteUser(id int)(*User, error)
+	Login(email string) (*User, error)
 }
 
 type User struct{
