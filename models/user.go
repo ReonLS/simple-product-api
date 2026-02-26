@@ -1,29 +1,27 @@
 package models
 
+import (
+	"context"
+	"simple-product-api/utils"
+)
+
 //Repository Pattern
 type UserRepository interface{
-	GetAllUsers()([]*User, error)
-	GetUserbyId(id int)(*User, error)
-	Register(model *User)(*User, error)
-	UpdateUser(id int, model *User)(*User, error)
-	DeleteUser(id int)(*User, error)
-	Login(email string) (*User, error)
+	Register(ctx context.Context, model *User)(*User, error)
+	FindByEmail(ttx context.Context, email string) (*User, error)
+	GetAllUsers(ctx context.Context)([]*User, error) //admin
+	GetUserById(ctx context.Context, id string) (*User, error)  //admin
+	UpdateUser(ctx context.Context,id string, model *User)(*User, error) //both admin and user
+	DeleteUser(ctx context.Context,id string)(*User, error) //admin
 }
 
 type User struct{
-	Id int
+	Id string
 	Name string
 	Password string
 	Email string
-	Role Role
+	Role utils.Role
 }
-
-type Role string
-
-const (
-	RoleUser Role = "User"
-	RoleAdmin Role = "Admin"
-)
 
 //Update & Register
 type UserRequest struct{
@@ -38,14 +36,14 @@ type LoginRequest struct {
 }
 
 type UserResponse struct{
-	Id int `json:"id"`
+	Id string `json:"id"`
 	Name string `json:"name"`
 	Email string `json:"email"`
 }
 
 type AdminUserResponse struct{
-	Id int `json:"id"`
+	Id string `json:"id"`
 	Name string `json:"name"`
 	Email string `json:"email"`
-	Role Role `json:"role"`
+	Role utils.Role `json:"role"`
 }

@@ -1,16 +1,18 @@
 package models
 
+import "context"
+
 //repository pattern
 type ProductRepository interface{
-	GetProduct() ([]*Product, error)
-	InsertProduct(req *Product) (*Product, error)
-	UpdateProductByID(id int, req *Product) (*Product, error)
-	DeleteProductByID(id int) (*Product, error)
+	GetProductByUserID(ctx context.Context, id string) ([]*Product, error) //id dari context
+	InsertProduct(ctx context.Context ,req *Product) (*Product, error)
+	UpdateProductByID(ctx context.Context, id string, req *Product) (*Product, error)
+	DeleteProductByID(ctx context.Context, id string) (*Product, error)
 }
 
 type Product struct{
-	Id int
-	UserId int
+	Id string
+	UserId string
 	Namaprod string
 	Kategori string
 	Price float64
@@ -20,15 +22,23 @@ type Product struct{
 //for now, req ada user id jd bs ambil produk apa yg milik user id itu (next auto cek based by authorization on middleware)
 //jadi cuman bs liat produk unik milik user
 type ProductRequest struct{
-	Namaprod string `json:"namaprod" binding:"required"`
-	Kategori string `json:"kategori" binding:"required"`
-	Price float64 `json:"price" binding:"required,gt=0"`
-	Stock int `json:"stock" binding:"required,gt=0"`
+	Namaprod string `json:"namaprod"`
+	Kategori string `json:"kategori"`
+	Price float64 `json:"price"`
+	Stock int `json:"stock"`
 }
 
-type ProductResponse struct{
-	Id int `json:"id"`
-	UserId int `json:"userid"`
+type UserProductResponse struct{
+	Id string `json:"id"`
+	Namaprod string `json:"namaprod"`
+	Kategori string `json:"kategori"`
+	Price float64 `json:"price"`
+	Stock int `json:"stock"`
+}
+
+type AdminProductResponse struct{
+	Id string `json:"id"`
+	UserId string `json:"userid"`
 	Namaprod string `json:"namaprod"`
 	Kategori string `json:"kategori"`
 	Price float64 `json:"price"`

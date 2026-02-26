@@ -1,6 +1,10 @@
 package service
 
-import "simple-product-api/models"
+import (
+	"context"
+	"simple-product-api/models"
+	"github.com/google/uuid"
+)
 
 type ProductService struct{
 	Repo models.ProductRepository
@@ -11,9 +15,9 @@ func NewProductService(repo models.ProductRepository) *ProductService{
 	return &ProductService{Repo: repo}
 }
 
-func (pr *ProductService) ToProductResponse(p *models.Product) *models.ProductResponse{
+func (pr *ProductService) ToProductResponse(p *models.Product) *models.UserProductResponse{
 	//transform dari domain struct(db) jd response (json-embedded)
-	return &models.ProductResponse{
+	return &models.UserProductResponse{
 		Id: p.Id,
 		Namaprod: p.Namaprod,
 		Kategori: p.Kategori,
@@ -22,11 +26,23 @@ func (pr *ProductService) ToProductResponse(p *models.Product) *models.ProductRe
 	}
 }
 
-func (pr *ProductService) GetProduct()([]*models.ProductResponse, error){
-	//Alur : Nerima domain struct, transform jadi response 
-	var dataResp []*models.ProductResponse
+func (pr *ProductService) ToAdminProductResponse(p *models.Product) *models.AdminProductResponse{
+	//transform dari domain struct(db) jd response (json-embedded)
+	return &models.AdminProductResponse{
+		Id: p.Id,
+		UserId: p.UserId,
+		Namaprod: p.Namaprod,
+		Kategori: p.Kategori,
+		Price: p.Price,
+		Stock: p.Stock,
+	}
+}
 
-	data, err := pr.Repo.GetProduct()
+func (pr *ProductService) GetProductByUserID(ctx context.Context, id string)([]*models.UserProductResponse, error){
+	//Alur : Nerima domain struct, transform jadi response 
+	var dataResp []*models.UserProductResponse
+
+	data, err := pr.Repo.GetProductByUserID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +56,7 @@ func (pr *ProductService) GetProduct()([]*models.ProductResponse, error){
 	return dataResp, nil
 }
 
-func (pr *ProductService) InsertProduct(req *models.ProductRequest) (*models.ProductResponse, error){
+func (pr *ProductService) InsertProduct(ctx context.Context, req *models.ProductRequest) (*models.UserProductResponse, error){
 	//Alur : Nerima domain struct, generate product.response
 	var data = &models.Product{
 		Namaprod: req.Namaprod,
@@ -49,7 +65,7 @@ func (pr *ProductService) InsertProduct(req *models.ProductRequest) (*models.Pro
 		Stock: req.Stock,
 	}
 
-	product, err := pr.Repo.InsertProduct(data)
+	product, err := pr.Repo.InsertProduct(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -58,17 +74,17 @@ func (pr *ProductService) InsertProduct(req *models.ProductRequest) (*models.Pro
 	return pr.ToProductResponse(product), nil
 }
 
-func (pr *ProductService) UpdateProductByID(id int, req *models.ProductRequest) (*models.ProductResponse, error){
+func (pr *ProductService) UpdateProductByID(ctx context.Context, id string, req *models.ProductRequest) (*models.UserProductResponse, error){
 	//Alur : Nerima domain struct, generate product.response
 	var data = &models.Product{
-		Id: id,
+		Id: uuid.New().String(),
 		Namaprod: req.Namaprod,
 		Kategori: req.Kategori,
 		Price: req.Price,
 		Stock: req.Stock,
 	}
 
-	product, err := pr.Repo.UpdateProductByID(id, data)
+	product, err := pr.Repo.UpdateProductByID(ctx, id, data)
 	if err != nil {
 		return nil, err
 	}
@@ -77,10 +93,10 @@ func (pr *ProductService) UpdateProductByID(id int, req *models.ProductRequest) 
 	return pr.ToProductResponse(product), nil
 }
 
-func (pr *ProductService) DeleteProductByID(id int) (*models.ProductResponse, error){
+func (pr *ProductService) DeleteProductByID(ctx context.Context, id string) (*models.UserProductResponse, error){
 	//Alur : Nerima domain struct, generate product.response
 
-	product, err := pr.Repo.DeleteProductByID(id)
+	product, err := pr.Repo.DeleteProductByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

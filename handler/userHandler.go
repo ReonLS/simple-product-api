@@ -3,10 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"net/mail"
 	"simple-product-api/models"
 	"simple-product-api/service"
-	"strconv"
 	"strings"
+	"errors"
 )
 
 type UserHandler struct {
@@ -17,49 +18,61 @@ func NewUserHandler(service *service.UserService) *UserHandler{
 	return &UserHandler{Service: service}
 }
 
-func (uh *UserHandler) GetAllUsers(rw http.ResponseWriter, r *http.Request){
-	rw.Header().Set("Content-Type", "application/json")
-
-	data, err := uh.Service.GetAllUsers()
-	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
-		return
+func ValidateRegister (req *models.UserRequest) (error){
+	//validasi nama
+	if req.Name == "" {
+		return errors.New("Name must not be empty!")
 	}
-	rw.WriteHeader(http.StatusOK)
-
-	err = json.NewEncoder(rw).Encode(data)
-	if err != nil {
-		//server-side error
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
+	if len(req.Name) < 3 {
+		return errors.New("Name must be at least 3 Characters long!")
 	}
+	
+	//validasi email
+	if err := validateEmail(req.Email); err != nil {
+		return err
+	}
+	
+	//validasi password, nerima 8
+	if err := ValidatePassword(req.Password); err != nil{
+		return err
+	}
+	//berarti aman
+	return nil
 }
 
-func (uh *UserHandler) GetUserbyId(rw http.ResponseWriter, r *http.Request){
-	rw.Header().Set("Content-Type", "application/json")
-
-	//generate id from path
-	path := r.URL.Path
-	idstring := strings.TrimPrefix(path, "/user/")
-	id, err := strconv.Atoi(idstring)
-	if err != nil {
-		http.Error(rw, "", http.StatusInternalServerError)
-		return
+func ValidateLogin (req *models.LoginRequest) (error){
+	//validasi email
+	if err := validateEmail(req.Email); err != nil {
+		return err
 	}
-
-	data, err := uh.Service.GetUserbyId(id)
-	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
-		return
+	
+	//validasi password, nerima 8
+	if err := ValidatePassword(req.Password); err != nil{
+		return err
 	}
-	rw.WriteHeader(http.StatusOK)
+	//berarti aman
+	return nil
+}
 
-	err = json.NewEncoder(rw).Encode(data)
-	if err != nil {
-		//server-side error
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
+//mungkin perlu implement unique email
+func validateEmail(email string) error {
+	if email == ""{
+		return errors.New("Email May Not Be Empty!")
 	}
+	if _, err := mail.ParseAddress(email); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ValidatePassword(Password string) (error){
+	if Password == "" {
+		return errors.New("Password must not be empty!")
+	}
+	if len(Password) <= 7 {
+		return errors.New("Password must be at least 8 Characters long!")
+	}
+	return nil
 }
 
 func (uh *UserHandler) Register(rw http.ResponseWriter, r *http.Request){
@@ -68,6 +81,12 @@ func (uh *UserHandler) Register(rw http.ResponseWriter, r *http.Request){
 	//decode
 	var request = &models.UserRequest{}
 	err := json.NewDecoder(r.Body).Decode(&request)
+
+	//validate
+	if err := ValidateRegister(request); err != nil {
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
 	
 	defer r.Body.Close()
 
@@ -76,7 +95,7 @@ func (uh *UserHandler) Register(rw http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	response, err := uh.Service.Register(request)
+	response, err := uh.Service.Register(r.Context(), request)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
@@ -98,6 +117,12 @@ func (uh *UserHandler) Login(rw http.ResponseWriter, r *http.Request){
 	var request = &models.LoginRequest{}
 	err := json.NewDecoder(r.Body).Decode(&request)
 	
+	//validate
+	if err := ValidateLogin(request); err != nil {
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	defer r.Body.Close()
 
 	if err != nil {
@@ -105,14 +130,55 @@ func (uh *UserHandler) Login(rw http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	response, err := uh.Service.Login(request)
+	//could be either error or token
+	token, err := uh.Service.Login(r.Context(), request)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(rw).Encode(response)
+	err = json.NewEncoder(rw).Encode(token)
+	if err != nil {
+		//server-side error
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (uh *UserHandler) GetAllUsers(rw http.ResponseWriter, r *http.Request){
+	rw.Header().Set("Content-Type", "application/json")
+
+	data, err := uh.Service.GetAllUsers(r.Context())
+	if err != nil {
+		http.Error(rw, "", http.StatusBadRequest)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(rw).Encode(data)
+	if err != nil {
+		//server-side error
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (uh *UserHandler) GetUserbyId(rw http.ResponseWriter, r *http.Request){
+	rw.Header().Set("Content-Type", "application/json")
+
+	//generate id from path
+	path := r.URL.Path
+	idstring := strings.TrimPrefix(path, "/user/")
+
+	data, err := uh.Service.GetUserById(r.Context(), idstring)
+	if err != nil {
+		http.Error(rw, "", http.StatusBadRequest)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(rw).Encode(data)
 	if err != nil {
 		//server-side error
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
@@ -126,22 +192,17 @@ func (uh *UserHandler) UpdateUser(rw http.ResponseWriter, r *http.Request){
 	//generate id from path
 	path := r.URL.Path
 	idstring := strings.TrimPrefix(path, "/user/")
-	id, err := strconv.Atoi(idstring)
-	if err != nil {
-		http.Error(rw, "", http.StatusInternalServerError)
-		return
-	}
 
 	//decode
 	var request = &models.UserRequest{}
-	err = json.NewDecoder(r.Body).Decode(&request)
+	err := json.NewDecoder(r.Body).Decode(&request)
 	defer r.Body.Close()
 
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 	}
 
-	response, err := uh.Service.UpdateUser(id, request)
+	response, err := uh.Service.UpdateUser(r.Context(), idstring, request)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
@@ -162,13 +223,8 @@ func (uh *UserHandler) DeleteUser(rw http.ResponseWriter, r *http.Request){
 	//generate id from path
 	path := r.URL.Path
 	idstring := strings.TrimPrefix(path, "/user/")
-	id, err := strconv.Atoi(idstring)
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	response, err := uh.Service.DeleteUser(id)
+	
+	response, err := uh.Service.DeleteUser(r.Context(), idstring)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return

@@ -30,6 +30,7 @@ func main() {
 	mux := http.NewServeMux()
 	route.Product(mux)
 	route.User(mux)
+	route.LoginRegister(mux)
 
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {

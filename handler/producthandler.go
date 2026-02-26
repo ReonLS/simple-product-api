@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"simple-product-api/models"
 	"simple-product-api/service"
-	"strconv"
+	"simple-product-api/utils"
 	"strings"
 )
 
@@ -25,9 +25,15 @@ func (ph *ProductHandler) GetProduct(rw http.ResponseWriter, r *http.Request) {
 	//Alur : Nerima response, encode jadi json 
 	rw.Header().Set("Content-Type", "application/json")
 
-	products, err := ph.Service.GetProduct()
+	//placeholder ngambils claims dari context, ambil id
+	claims, ok := utils.GetClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(rw, "Failed Claims", http.StatusUnauthorized)
+	}
+
+	products, err := ph.Service.GetProductByUserID(r.Context(), claims.Id)
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 	}
 	//berarti aman
 	rw.WriteHeader(http.StatusOK)
@@ -53,14 +59,14 @@ func (ph *ProductHandler) InsertProduct(rw http.ResponseWriter, r *http.Request)
 
 	if err != nil {
 		//dianggap client salah kirim input
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	//logikanya gagal kebentuk, berarti user kirim faulty request
-	response, err := ph.Service.InsertProduct(request)
+	response, err := ph.Service.InsertProduct(r.Context(), request)
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -80,27 +86,21 @@ func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Requ
 	stringId := strings.TrimPrefix(path, "/product/") //{id}
 	fmt.Println("Masuk PUT", stringId)
 
-	id, err := strconv.Atoi(stringId)
-	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
-		return
-	}
-
 	//tampungan decode
 	var request = &models.ProductRequest{}
 
-	err = json.NewDecoder(r.Body).Decode(&request)
+	err := json.NewDecoder(r.Body).Decode(&request)
 	defer r.Body.Close()
 
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	//panggil service func
-	response, err := ph.Service.UpdateProductByID(id, request)
+	response, err := ph.Service.UpdateProductByID(r.Context(), stringId, request)
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 	//berarti aman
@@ -109,7 +109,7 @@ func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Requ
 	//encode update untuk write ke stream
 	err = json.NewEncoder(rw).Encode(response)
 	if err != nil {
-		http.Error(rw, "", http.StatusInternalServerError)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -121,18 +121,11 @@ func (ph *ProductHandler) DeleteProductByID(rw http.ResponseWriter, r *http.Requ
 	//generate id from path
 	path := r.URL.Path
 	idstring := strings.TrimPrefix(path, "/product/")
-	id, err := strconv.Atoi(idstring)
-	fmt.Println("Masuk DELETE", id)
-
-	if err != nil{
-		http.Error(rw, "", http.StatusBadRequest)
-		return
-	}
 
 	//jalankan query
-	response, err := ph.Service.DeleteProductByID(id)
+	response, err := ph.Service.DeleteProductByID(r.Context(), idstring)
 	if err != nil {
-		http.Error(rw, "", http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 	//berarti aman
@@ -141,7 +134,7 @@ func (ph *ProductHandler) DeleteProductByID(rw http.ResponseWriter, r *http.Requ
 	//tembak ke stream
 	err = json.NewEncoder(rw).Encode(response)
 	if err != nil {
-		http.Error(rw, "", http.StatusInternalServerError)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
