@@ -2,13 +2,12 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
-	"net/mail"
 	"simple-product-api/models"
 	"simple-product-api/service"
 	"simple-product-api/utils"
 	"strings"
+	"github.com/go-chi/chi/v5"
 )
 
 type UserHandler struct {
@@ -19,73 +18,22 @@ func NewUserHandler(service *service.UserService) *UserHandler{
 	return &UserHandler{Service: service}
 }
 
-func ValidateRegister (req *models.UserRequest) (error){
-	//validasi nama
-	if req.Name == "" {
-		return errors.New("Name must not be empty!")
-	}
-	if len(req.Name) < 3 {
-		return errors.New("Name must be at least 3 Characters long!")
-	}
-	
-	//validasi email
-	if err := validateEmail(req.Email); err != nil {
-		return err
-	}
-	
-	//validasi password, nerima 8
-	if err := ValidatePassword(req.Password); err != nil{
-		return err
-	}
-	//berarti aman
-	return nil
-}
-
-func ValidateLogin (req *models.LoginRequest) (error){
-	//validasi email
-	if err := validateEmail(req.Email); err != nil {
-		return err
-	}
-	
-	//validasi password, nerima 8
-	if err := ValidatePassword(req.Password); err != nil{
-		return err
-	}
-	//berarti aman
-	return nil
-}
-
-//mungkin perlu implement unique email
-func validateEmail(email string) error {
-	if email == ""{
-		return errors.New("Email May Not Be Empty!")
-	}
-	if _, err := mail.ParseAddress(email); err != nil {
-		return err
-	}
-	return nil
-}
-
-func ValidatePassword(Password string) (error){
-	if Password == "" {
-		return errors.New("Password must not be empty!")
-	}
-	if len(Password) <= 7 {
-		return errors.New("Password must be at least 8 Characters long!")
-	}
-	return nil
-}
-
 func (uh *UserHandler) Register(rw http.ResponseWriter, r *http.Request){
 	rw.Header().Set("Content-Type", "application/json")
 
 	//decode
-	var request = &models.UserRequest{}
-	err := json.NewDecoder(r.Body).Decode(&request)
+	var req = &models.UserRequest{}
+	err := json.NewDecoder(r.Body).Decode(&req)
 
 	//validate
-	if err := ValidateRegister(request); err != nil {
-		http.Error(rw, err.Error(), http.StatusBadRequest)
+	if err := utils.ValidateRequest(req.Name, req.Email, req.Password); len(err) > 0 {
+		//Access setiap error, join ke joinedError, return sebagai message
+		var joinedError []string
+		for _, each := range err{
+			joinedError = append(joinedError, each.Error())
+		}
+
+		http.Error(rw, strings.Join(joinedError, "\n"), http.StatusBadRequest)
 		return
 	}
 	
@@ -96,7 +44,7 @@ func (uh *UserHandler) Register(rw http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	response, err := uh.Service.Register(r.Context(), request)
+	response, err := uh.Service.Register(r.Context(), req)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
@@ -115,12 +63,17 @@ func (uh *UserHandler) Login(rw http.ResponseWriter, r *http.Request){
 	rw.Header().Set("Content-Type", "application/json")
 
 	//decode
-	var request = &models.LoginRequest{}
-	err := json.NewDecoder(r.Body).Decode(&request)
+	var req = &models.LoginRequest{}
+	err := json.NewDecoder(r.Body).Decode(&req)
 	
 	//validate
-	if err := ValidateLogin(request); err != nil {
-		http.Error(rw, err.Error(), http.StatusBadRequest)
+	if err := utils.ValidateLogin(req.Email, req.Password); len(err) > 0 {
+		var joinedError []string
+		for _, each := range err{
+			joinedError = append(joinedError, each.Error())
+		}
+
+		http.Error(rw, strings.Join(joinedError, "\n"), http.StatusBadRequest)
 		return
 	}
 
@@ -132,7 +85,7 @@ func (uh *UserHandler) Login(rw http.ResponseWriter, r *http.Request){
 	}
 
 	//could be either error or token
-	token, err := uh.Service.Login(r.Context(), request)
+	token, err := uh.Service.Login(r.Context(), req)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
@@ -195,10 +148,9 @@ func (uh *UserHandler) AdminGetUserProfile(rw http.ResponseWriter, r *http.Reque
 	rw.Header().Set("Content-Type", "application/json")
 
 	//generate id from path
-	path := r.URL.Path
-	idstring := strings.TrimPrefix(path, "/admin/user/")
+	userID := chi.URLParam(r, "id")
 
-	data, err := uh.Service.GetUserById(r.Context(), idstring)
+	data, err := uh.Service.GetUserById(r.Context(), userID)
 	if err != nil {
 		http.Error(rw, "", http.StatusBadRequest)
 		return
@@ -218,8 +170,8 @@ func (uh *UserHandler) UpdateProfile(rw http.ResponseWriter, r *http.Request){
 	rw.Header().Set("Content-Type", "application/json")
 
 	//decode
-	var request = &models.UserRequest{}
-	err := json.NewDecoder(r.Body).Decode(&request)
+	var req = &models.UserRequest{}
+	err := json.NewDecoder(r.Body).Decode(&req)
 	defer r.Body.Close()
 
 	if err != nil {
@@ -232,7 +184,19 @@ func (uh *UserHandler) UpdateProfile(rw http.ResponseWriter, r *http.Request){
 		http.Error(rw, "Failed Claims", http.StatusUnauthorized)
 	}
 
-	response, err := uh.Service.UpdateUserProfile(r.Context(), claims.Id, request)
+	//validate
+	if err := utils.ValidateRequest(req.Name, req.Email, req.Password); len(err) > 0 {
+		//Access setiap error, join ke joinedError, return sebagai message
+		var joinedError []string
+		for _, each := range err{
+			joinedError = append(joinedError, each.Error())
+		}
+
+		http.Error(rw, strings.Join(joinedError, "\n"), http.StatusBadRequest)
+		return
+	}
+
+	response, err := uh.Service.UpdateUserProfile(r.Context(), claims.Id, req)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
@@ -251,10 +215,9 @@ func (uh *UserHandler) DeleteUser(rw http.ResponseWriter, r *http.Request){
 	rw.Header().Set("Content-Type", "application/json")
 
 	//generate id from path
-	path := r.URL.Path
-	idstring := strings.TrimPrefix(path, "/user/")
+	userID := chi.URLParam(r, "id")
 	
-	response, err := uh.Service.DeleteUser(r.Context(), idstring)
+	response, err := uh.Service.DeleteUser(r.Context(), userID)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return

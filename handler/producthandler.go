@@ -2,12 +2,12 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"simple-product-api/models"
 	"simple-product-api/service"
 	"simple-product-api/utils"
 	"strings"
+	"github.com/go-chi/chi/v5"
 )
 
 // buat instans DB, jdi layer handler bisa exec query
@@ -31,7 +31,30 @@ func (ph *ProductHandler) GetProduct(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "No Information", http.StatusUnauthorized)
 	}
 
-	products, err := ph.Service.GetProductByUserID(r.Context(), claims.Id)
+	products, err := ph.Service.GetUserProduct(r.Context(), claims.Id)
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+	}
+	//berarti aman
+	rw.WriteHeader(http.StatusOK)
+
+	//Best Approach, more memory efficient
+	err = json.NewEncoder(rw).Encode(products)
+	if err != nil {
+		//server-side error
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (ph *ProductHandler) AdminGetProductUser(rw http.ResponseWriter, r *http.Request) {
+	//Alur : Nerima response, encode jadi json
+	rw.Header().Set("Content-Type", "application/json")
+
+	//ngambil id from path
+	UserID := chi.URLParam(r, "id")
+
+	products, err := ph.Service.AdminGetUserProduct(r.Context(), UserID)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 	}
@@ -50,16 +73,27 @@ func (ph *ProductHandler) GetProduct(rw http.ResponseWriter, r *http.Request) {
 func (ph *ProductHandler) InsertProduct(rw http.ResponseWriter, r *http.Request) {
 	//Alur real life : nerima json -> decode dan simpan di tampungan, exec query, generate respon
 	rw.Header().Set("Content-Type", "application/json")
-	fmt.Println("Masuk POST")
 
 	//membuat tampungan
-	var request = &models.ProductRequest{}
-	err := json.NewDecoder(r.Body).Decode(&request)
+	var req = &models.ProductRequest{}
+	err := json.NewDecoder(r.Body).Decode(&req)
 	defer r.Body.Close()
 
 	if err != nil {
 		//dianggap client salah kirim input
 		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	//validasi input
+	if err := utils.ValidateProduct(req.Namaprod, string(req.Kategori), req.Price, req.Stock); len(err) > 0 {
+		//Access setiap error, join ke joinedError, return sebagai message
+		var joinedError []string
+		for _, each := range err {
+			joinedError = append(joinedError, each.Error())
+		}
+
+		http.Error(rw, strings.Join(joinedError, "\n"), http.StatusBadRequest)
 		return
 	}
 
@@ -71,7 +105,7 @@ func (ph *ProductHandler) InsertProduct(rw http.ResponseWriter, r *http.Request)
 	}
 
 	//logikanya gagal kebentuk, berarti user kirim faulty request
-	response, err := ph.Service.InsertProduct(r.Context(), claims.Id, request)
+	response, err := ph.Service.InsertProduct(r.Context(), claims.Id, req)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
@@ -89,14 +123,12 @@ func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Requ
 	rw.Header().Set("Content-Type", "application/json")
 
 	//parsing id dari path
-	path := r.URL.Path                                //{/{id}}
-	stringId := strings.TrimPrefix(path, "/product/") //{id}
-	fmt.Println("Masuk PUT", stringId)
+	prodID := chi.URLParam(r, "id")
 
 	//tampungan decode
-	var request = &models.ProductRequest{}
+	var req = &models.ProductRequest{}
 
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	defer r.Body.Close()
 
 	if err != nil {
@@ -104,8 +136,20 @@ func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	//validasi input
+	if err := utils.ValidateProduct(req.Namaprod, string(req.Kategori), req.Price, req.Stock); len(err) > 0 {
+		//Access setiap error, join ke joinedError, return sebagai message
+		var joinedError []string
+		for _, each := range err {
+			joinedError = append(joinedError, each.Error())
+		}
+
+		http.Error(rw, strings.Join(joinedError, "\n"), http.StatusBadRequest)
+		return
+	}
+
 	//panggil service func
-	response, err := ph.Service.UpdateProductByID(r.Context(), stringId, request)
+	response, err := ph.Service.UpdateProductByID(r.Context(), prodID, req)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
@@ -125,12 +169,11 @@ func (ph *ProductHandler) DeleteProductByID(rw http.ResponseWriter, r *http.Requ
 	//alur : set header -> ambil ID dari url, decode, jalankan query, encode, response
 	rw.Header().Set("Content-Type", "application/json")
 
-	//generate id from path
-	path := r.URL.Path
-	idstring := strings.TrimPrefix(path, "/product/")
+	//parsing id dari path
+	prodID := chi.URLParam(r, "id")
 
 	//jalankan query
-	response, err := ph.Service.DeleteProductByID(r.Context(), idstring)
+	response, err := ph.Service.DeleteProductByID(r.Context(), prodID)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return

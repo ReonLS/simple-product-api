@@ -1,6 +1,9 @@
 package models
 
-import "context"
+import (
+	"context"
+	"simple-product-api/utils"
+)
 
 //repository pattern
 type ProductRepository interface{
@@ -14,7 +17,7 @@ type Product struct{
 	Id string
 	UserId string
 	Namaprod string
-	Kategori string
+	Kategori utils.Category
 	Price float64
 	Stock int
 }
@@ -23,7 +26,7 @@ type Product struct{
 //jadi cuman bs liat produk unik milik user
 type ProductRequest struct{
 	Namaprod string `json:"namaprod"`
-	Kategori string `json:"kategori"`
+	Kategori utils.Category `json:"kategori"`
 	Price float64 `json:"price"`
 	Stock int `json:"stock"`
 }
@@ -31,7 +34,7 @@ type ProductRequest struct{
 type UserProductResponse struct{
 	Id string `json:"id"`
 	Namaprod string `json:"namaprod"`
-	Kategori string `json:"kategori"`
+	Kategori utils.Category `json:"kategori"`
 	Price float64 `json:"price"`
 	Stock int `json:"stock"`
 }
@@ -40,7 +43,7 @@ type AdminProductResponse struct{
 	Id string `json:"id"`
 	UserId string `json:"userid"`
 	Namaprod string `json:"namaprod"`
-	Kategori string `json:"kategori"`
+	Kategori utils.Category `json:"kategori"`
 	Price float64 `json:"price"`
 	Stock int `json:"stock"`
 }

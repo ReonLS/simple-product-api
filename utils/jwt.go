@@ -20,7 +20,6 @@ var jwtkey = []byte("codinganrexileon")
 //custom claims, designed by including what information's necessary to authorize the user
 type JWTclaim struct{
 	Id string `json:"id"`
-	Email string `json:"email"`
 	Role string `json:"role"`
 	jwt.RegisteredClaims
 }
@@ -29,7 +28,6 @@ func GenerateJWT(id string, email string, role string) (string, error) {
 	//Alur: Initialize custom struct, lalu generate JWT Token, lalu sign dengan secret key
 	claims := &JWTclaim{
 		Id: id,
-		Email: email,
 		Role: role,
 		RegisteredClaims : jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),

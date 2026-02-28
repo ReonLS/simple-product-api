@@ -38,7 +38,7 @@ func (pr *ProductService) ToAdminProductResponse(p *models.Product) *models.Admi
 	}
 }
 
-func (pr *ProductService) GetProductByUserID(ctx context.Context, id string)([]*models.UserProductResponse, error){
+func (pr *ProductService) GetUserProduct(ctx context.Context, id string)([]*models.UserProductResponse, error){
 	//Alur : Nerima domain struct, transform jadi response 
 	var dataResp []*models.UserProductResponse
 
@@ -50,6 +50,24 @@ func (pr *ProductService) GetProductByUserID(ctx context.Context, id string)([]*
 	//for loop access masing2
 	for _, rows := range data{
 		dataResp = append(dataResp, pr.ToProductResponse(rows))
+	}
+
+	//aman berarti
+	return dataResp, nil
+}
+
+func (pr *ProductService) AdminGetUserProduct(ctx context.Context, id string)([]*models.AdminProductResponse, error){
+	//Alur : Nerima domain struct, transform jadi response 
+	var dataResp []*models.AdminProductResponse
+
+	data, err := pr.Repo.GetProductByUserID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	//for loop access masing2
+	for _, rows := range data{
+		dataResp = append(dataResp, pr.ToAdminProductResponse(rows))
 	}
 
 	//aman berarti
@@ -79,7 +97,7 @@ func (pr *ProductService) InsertProduct(ctx context.Context, userid string, req 
 func (pr *ProductService) UpdateProductByID(ctx context.Context, id string, req *models.ProductRequest) (*models.UserProductResponse, error){
 	//Alur : Nerima domain struct, generate product.response
 	var data = &models.Product{
-		Id: uuid.New().String(),
+		Id: id,
 		Namaprod: req.Namaprod,
 		Kategori: req.Kategori,
 		Price: req.Price,

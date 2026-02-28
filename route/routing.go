@@ -4,7 +4,6 @@ import (
 	"simple-product-api/handler"
 	"simple-product-api/middleware"
 	"simple-product-api/utils"
-
 	"github.com/go-chi/chi/v5"
 )
 
@@ -25,10 +24,19 @@ func (route *Route) RouteSetup (r chi.Router){
 	r.Post("/login", route.UserHandler.Login)
 
 	//Endpoint: /user
-	r.Group(func(r chi.Router) {
+	r.Route("/user", func(r chi.Router) {
 		r.Use(middleware.AuthenticateJWT)
-		r.Get("/user", route.UserHandler.GetProfile)
-		r.Put("/user", route.UserHandler.UpdateProfile) 
+		r.Use(middleware.AuthenticateRole(utils.RoleUser))
+
+		//user
+		r.Get("/", route.UserHandler.GetProfile)
+		r.Put("/", route.UserHandler.UpdateProfile)
+
+		//user/product
+		r.Get("/product", route.ProdHandler.GetProduct)
+		r.Post("/product", route.ProdHandler.InsertProduct)
+		r.Put("/product/{id}", route.ProdHandler.UpdateProductByID)
+		r.Delete("/product/{id}", route.ProdHandler.DeleteProductByID)
 	})
 
 	//Endpoint : /admin/user
@@ -36,17 +44,12 @@ func (route *Route) RouteSetup (r chi.Router){
 		r.Use(middleware.AuthenticateJWT)
 		r.Use(middleware.AuthenticateRole(utils.RoleAdmin))
 
-		r.Get("/user", route.UserHandler.GetAllUsers) //admin
-		r.Get("/user/{id}", route.UserHandler.AdminGetUserProfile) //admin
-		r.Delete("/user/{id}", route.UserHandler.DeleteUser) //admin
-	})
+		//admin/user
+		r.Get("/user", route.UserHandler.GetAllUsers) 
+		r.Get("/user/{id}", route.UserHandler.AdminGetUserProfile) 
+		r.Delete("/user/{id}", route.UserHandler.DeleteUser) 
 
-	//Endpoint: /product
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.AuthenticateJWT)
-		r.Get("/product", route.ProdHandler.GetProduct)
-		r.Post("/product", route.ProdHandler.InsertProduct)
-		r.Put("/product/{id}", route.ProdHandler.UpdateProductByID)
-		r.Delete("/product/{id}", route.ProdHandler.DeleteProductByID)
+		//admin/user/product
+		r.Get("/{id}/product", route.ProdHandler.AdminGetProductUser)
 	})
 }

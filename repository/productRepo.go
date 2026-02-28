@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"simple-product-api/models"
 )
 
@@ -12,7 +11,7 @@ type ProductRepo struct {
 	DB *sql.DB
 }
 
-func NewProductRepo(db *sql.DB) *ProductRepo{
+func NewProductRepo(db *sql.DB) *ProductRepo {
 	return &ProductRepo{DB: db}
 }
 
@@ -21,7 +20,7 @@ func (pr *ProductRepo) GetProductByUserID(ctx context.Context, id string) ([]*mo
 
 	var data []*models.Product
 
-	rows, err := pr.DB.QueryContext(ctx ,"Select * from product where userid = ?", id)
+	rows, err := pr.DB.QueryContext(ctx, "Select * from product where userid = ?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +29,7 @@ func (pr *ProductRepo) GetProductByUserID(ctx context.Context, id string) ([]*mo
 	for rows.Next() {
 		var rowData = &models.Product{}
 
-		if err = rows.Scan(&rowData.Id, &rowData.Namaprod, &rowData.Kategori, &rowData.Price, &rowData.Stock); err != nil {
+		if err = rows.Scan(&rowData.Id, &rowData.UserId, &rowData.Namaprod, &rowData.Kategori, &rowData.Price, &rowData.Stock); err != nil {
 			return nil, err
 		}
 		data = append(data, rowData)
@@ -43,7 +42,7 @@ func (pr *ProductRepo) InsertProduct(ctx context.Context, userid string, prod *m
 	//Alur : Jalanin query, return domain struct (ngamnbil id dari hasil auto increment table)
 
 	//query row exec query dan return data including ID pake returning, sebagai return value
-	query := "Insert into product (id, userid, namaprod, kategori, price, stock) values (?,?,?,?,?)"
+	query := "Insert into product (id, userid, namaprod, kategori, price, stock) values (?,?,?,?,?,?)"
 
 	//logikanya tu karna domain struct punya value sama aja, disini hasil queryrow return ID
 	//karna cukup butuh mappingan last inserted id untuk generate id product baru
@@ -92,9 +91,8 @@ func (pr *ProductRepo) DeleteProductByID(ctx context.Context, id string) (*model
 	var product = &models.Product{}
 	//query select based id, untuk dpt info deleted baru jalanin delete query
 	err := pr.DB.QueryRowContext(ctx, "select * from product where id = ?", id).
-		Scan(&product.Namaprod, &product.Kategori, &product.Price, &product.Stock)
+		Scan(&product.Id, &product.UserId, &product.Namaprod, &product.Kategori, &product.Price, &product.Stock)
 
-	fmt.Println(product.Id, product.Namaprod, product.Kategori, product.Price, product.Stock)
 	if err != nil {
 		return nil, err
 	}
