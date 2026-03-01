@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"simple-product-api/models"
 	"simple-product-api/utils"
 
@@ -36,19 +37,28 @@ func ToUserResponse(user *models.User) (*models.UserResponse){
 }
 
 func (us *UserService) Register(ctx context.Context, req *models.UserRequest) (*models.UserResponse, error) {
+
 	//panggil fungsi hash password, hasilnya diset sebagai password data
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
-	var data = &models.User{
-		Id: uuid.New().String(),
-		Name: req.Name,
-		Password: string(hashedPassword),
-		Email: req.Email,
-		Role: utils.RoleUser,
+	//Unique email check
+	data, err := us.Repo.FindByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, err
 	}
+	if data.Email == req.Email{
+		return nil, errors.New("Email already exist!")
+	}
+
+	//replace info data
+	data.Id =  uuid.New().String()
+	data.Name = req.Name
+	data.Password = string(hashedPassword)
+	data.Email = req.Email
+	data.Role = utils.RoleUser
 
 	data, err = us.Repo.Register(ctx, data)
 	if err != nil {

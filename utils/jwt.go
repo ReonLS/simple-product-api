@@ -47,7 +47,7 @@ func ParseToken(signedToken string) (*JWTclaim, error){
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&JWTclaim{},
-		func (token *jwt.Token) (interface{}, error){
+		func (token *jwt.Token) (any, error){
 			//bandingin token method dengan familynya (HMAC)
 			if _, ok :=token.Method.(*jwt.SigningMethodHMAC); !ok{
 				return nil, errors.New("Different Signing Method")

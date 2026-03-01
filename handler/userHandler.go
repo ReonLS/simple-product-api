@@ -7,6 +7,7 @@ import (
 	"simple-product-api/service"
 	"simple-product-api/utils"
 	"strings"
+
 	"github.com/go-chi/chi/v5"
 )
 
@@ -14,33 +15,31 @@ type UserHandler struct {
 	Service *service.UserService
 }
 
-func NewUserHandler(service *service.UserService) *UserHandler{
+func NewUserHandler(service *service.UserService) *UserHandler {
 	return &UserHandler{Service: service}
 }
 
-func (uh *UserHandler) Register(rw http.ResponseWriter, r *http.Request){
+func (uh *UserHandler) Register(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 
 	//decode
 	var req = &models.UserRequest{}
 	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	//validate
 	if err := utils.ValidateRequest(req.Name, req.Email, req.Password); len(err) > 0 {
 		//Access setiap error, join ke joinedError, return sebagai message
 		var joinedError []string
-		for _, each := range err{
+		for _, each := range err {
 			joinedError = append(joinedError, each.Error())
 		}
 
 		http.Error(rw, strings.Join(joinedError, "\n"), http.StatusBadRequest)
-		return
-	}
-	
-	defer r.Body.Close()
-
-	if err != nil {
-		http.Error(rw, "Err Request", http.StatusBadRequest)
 		return
 	}
 
@@ -59,17 +58,17 @@ func (uh *UserHandler) Register(rw http.ResponseWriter, r *http.Request){
 	}
 }
 
-func (uh *UserHandler) Login(rw http.ResponseWriter, r *http.Request){
+func (uh *UserHandler) Login(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 
 	//decode
 	var req = &models.LoginRequest{}
 	err := json.NewDecoder(r.Body).Decode(&req)
-	
+
 	//validate
 	if err := utils.ValidateLogin(req.Email, req.Password); len(err) > 0 {
 		var joinedError []string
-		for _, each := range err{
+		for _, each := range err {
 			joinedError = append(joinedError, each.Error())
 		}
 
@@ -100,7 +99,7 @@ func (uh *UserHandler) Login(rw http.ResponseWriter, r *http.Request){
 	}
 }
 
-func (uh *UserHandler) GetAllUsers(rw http.ResponseWriter, r *http.Request){
+func (uh *UserHandler) GetAllUsers(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 
 	data, err := uh.Service.GetAllUsers(r.Context())
@@ -118,8 +117,8 @@ func (uh *UserHandler) GetAllUsers(rw http.ResponseWriter, r *http.Request){
 	}
 }
 
-//User
-func (uh *UserHandler) GetProfile(rw http.ResponseWriter, r *http.Request){
+// User
+func (uh *UserHandler) GetProfile(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 
 	//Alur: ambil claims dari context, populate id dengan context id
@@ -143,8 +142,8 @@ func (uh *UserHandler) GetProfile(rw http.ResponseWriter, r *http.Request){
 	}
 }
 
-//Admin
-func (uh *UserHandler) AdminGetUserProfile(rw http.ResponseWriter, r *http.Request){
+// Admin
+func (uh *UserHandler) AdminGetUserProfile(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 
 	//generate id from path
@@ -165,8 +164,8 @@ func (uh *UserHandler) AdminGetUserProfile(rw http.ResponseWriter, r *http.Reque
 	}
 }
 
-//user
-func (uh *UserHandler) UpdateProfile(rw http.ResponseWriter, r *http.Request){
+// user
+func (uh *UserHandler) UpdateProfile(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 
 	//decode
@@ -177,7 +176,7 @@ func (uh *UserHandler) UpdateProfile(rw http.ResponseWriter, r *http.Request){
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 	}
-	
+
 	//Alur: ambil claims dari context, populate id dengan context id
 	claims, ok := utils.GetClaimsFromContext(r.Context())
 	if !ok {
@@ -188,7 +187,7 @@ func (uh *UserHandler) UpdateProfile(rw http.ResponseWriter, r *http.Request){
 	if err := utils.ValidateRequest(req.Name, req.Email, req.Password); len(err) > 0 {
 		//Access setiap error, join ke joinedError, return sebagai message
 		var joinedError []string
-		for _, each := range err{
+		for _, each := range err {
 			joinedError = append(joinedError, each.Error())
 		}
 
@@ -211,12 +210,12 @@ func (uh *UserHandler) UpdateProfile(rw http.ResponseWriter, r *http.Request){
 	}
 }
 
-func (uh *UserHandler) DeleteUser(rw http.ResponseWriter, r *http.Request){
+func (uh *UserHandler) DeleteUser(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 
 	//generate id from path
 	userID := chi.URLParam(r, "id")
-	
+
 	response, err := uh.Service.DeleteUser(r.Context(), userID)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
@@ -231,4 +230,3 @@ func (uh *UserHandler) DeleteUser(rw http.ResponseWriter, r *http.Request){
 		return
 	}
 }
-

@@ -7,8 +7,9 @@ import (
 
 //repository pattern
 type ProductRepository interface{
-	GetProductByUserID(ctx context.Context, id string) ([]*Product, error) //id dari context
-	InsertProduct(ctx context.Context ,userid string, req *Product) (*Product, error)
+	GetProductByUserID(ctx context.Context, userID string) ([]*Product, error) //id dari context
+	GetProductByProdID(ctx context.Context, prodID string) (*Product, error) //id dari context
+	InsertProduct(ctx context.Context ,userID string, req *Product) (*Product, error)
 	UpdateProductByID(ctx context.Context, id string, req *Product) (*Product, error)
 	DeleteProductByID(ctx context.Context, id string) (*Product, error)
 }

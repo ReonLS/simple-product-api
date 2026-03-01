@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"net/mail"
+	"strings"
 )
 
 type Role string
@@ -16,7 +17,7 @@ func ValidateRequest(name string, email string, password string) ([]error){
 	var listErr []error
 
 	//validasi nama
-	if name == "" {
+	if name == "" || len(strings.TrimSpace(name)) == 0{
 		listErr = append(listErr, errors.New("Name must not be empty!"))
 	} else if len(name) <= 2 {
 		listErr = append(listErr, errors.New("Name must be at least 3 Characters long!"))
@@ -64,7 +65,7 @@ func ValidateLogin (email string, password string) ([]error){
 func validateEmail(email string) []error {
 	var listErr []error
 
-	if email == ""{
+	if email == "" || len(strings.TrimSpace(email)) == 0{
 		listErr = append(listErr, errors.New("Email May Not Be Empty!"))
 	} else if _, err := mail.ParseAddress(email); err != nil {
 		listErr = append(listErr, errors.New("Invalid Email Format"))
@@ -76,7 +77,7 @@ func validateEmail(email string) []error {
 func validatePassword(Password string) []error{
 	var listErr []error
 
-	if Password == "" {
+	if Password == "" || len(strings.TrimSpace(Password)) == 0{
 		listErr = append (listErr, errors.New("Password must not be empty!"))
 	} else if len(Password) <= 7 {
 		listErr = append (listErr, errors.New("Password must be at least 8 Characters long!"))

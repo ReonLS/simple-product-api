@@ -6,6 +6,7 @@ import (
 	"simple-product-api/models"
 	"simple-product-api/service"
 	"simple-product-api/utils"
+	"strconv"
 	"strings"
 	"github.com/go-chi/chi/v5"
 )
@@ -122,12 +123,14 @@ func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Requ
 	//alur : set header, take id from url.path, decode req.body, call service func, generate respons
 	rw.Header().Set("Content-Type", "application/json")
 
-	//parsing id dari path
+	//Parsing id form path, validation
 	prodID := chi.URLParam(r, "id")
+	if prodID == strconv.Itoa(0) || prodID == ""{
+		http.Error(rw, "Invalid ID", http.StatusBadRequest)
+	}
 
 	//tampungan decode
 	var req = &models.ProductRequest{}
-
 	err := json.NewDecoder(r.Body).Decode(&req)
 	defer r.Body.Close()
 
@@ -148,8 +151,15 @@ func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	//ambil userId from Claims
+	claims, ok := utils.GetClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(rw, "Need Authorization", http.StatusUnauthorized)
+		return
+	}
+
 	//panggil service func
-	response, err := ph.Service.UpdateProductByID(r.Context(), prodID, req)
+	response, err := ph.Service.UpdateProductByID(r.Context(), prodID, claims.Id, req)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
@@ -169,11 +179,21 @@ func (ph *ProductHandler) DeleteProductByID(rw http.ResponseWriter, r *http.Requ
 	//alur : set header -> ambil ID dari url, decode, jalankan query, encode, response
 	rw.Header().Set("Content-Type", "application/json")
 
-	//parsing id dari path
+	//Parsing id form path, validation
 	prodID := chi.URLParam(r, "id")
+	if prodID == strconv.Itoa(0) || prodID == ""{
+		http.Error(rw, "Invalid ID", http.StatusBadRequest)
+	}
+
+	//ambil userId from Claims
+	claims, ok := utils.GetClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(rw, "Need Authorization", http.StatusUnauthorized)
+		return
+	}
 
 	//jalankan query
-	response, err := ph.Service.DeleteProductByID(r.Context(), prodID)
+	response, err := ph.Service.DeleteProductByID(r.Context(), prodID, claims.Id)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return

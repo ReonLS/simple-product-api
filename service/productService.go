@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"simple-product-api/models"
+
 	"github.com/google/uuid"
 )
 
@@ -38,11 +40,11 @@ func (pr *ProductService) ToAdminProductResponse(p *models.Product) *models.Admi
 	}
 }
 
-func (pr *ProductService) GetUserProduct(ctx context.Context, id string)([]*models.UserProductResponse, error){
+func (pr *ProductService) GetUserProduct(ctx context.Context, userID string)([]*models.UserProductResponse, error){
 	//Alur : Nerima domain struct, transform jadi response 
 	var dataResp []*models.UserProductResponse
 
-	data, err := pr.Repo.GetProductByUserID(ctx, id)
+	data, err := pr.Repo.GetProductByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -94,17 +96,29 @@ func (pr *ProductService) InsertProduct(ctx context.Context, userid string, req 
 	return pr.ToProductResponse(product), nil
 }
 
-func (pr *ProductService) UpdateProductByID(ctx context.Context, id string, req *models.ProductRequest) (*models.UserProductResponse, error){
+func (pr *ProductService) UpdateProductByID(ctx context.Context, ProdID string, userID string, req *models.ProductRequest) (*models.UserProductResponse, error){
 	//Alur : Nerima domain struct, generate product.response
-	var data = &models.Product{
-		Id: id,
-		Namaprod: req.Namaprod,
-		Kategori: req.Kategori,
-		Price: req.Price,
-		Stock: req.Stock,
+
+	//compare userID.ctx & userID.repo
+	data, err := pr.Repo.GetProductByProdID(ctx, ProdID)
+	if err != nil {
+		return nil, err
 	}
 
-	product, err := pr.Repo.UpdateProductByID(ctx, id, data)
+	//validasi ownership
+	if userID != data.UserId{
+		//http forbidden
+		return nil, errors.New("Must be your own products")
+	}
+
+	//replace dgn req's info
+	data.Id = ProdID
+	data.Namaprod = req.Namaprod
+	data.Kategori = req.Kategori
+	data.Price = req.Price
+	data.Stock = req.Stock
+
+	product, err := pr.Repo.UpdateProductByID(ctx, ProdID, data)
 	if err != nil {
 		return nil, err
 	}
@@ -113,13 +127,23 @@ func (pr *ProductService) UpdateProductByID(ctx context.Context, id string, req 
 	return pr.ToProductResponse(product), nil
 }
 
-func (pr *ProductService) DeleteProductByID(ctx context.Context, id string) (*models.UserProductResponse, error){
+func (pr *ProductService) DeleteProductByID(ctx context.Context, prodID string, userID string) (*models.UserProductResponse, error){
 	//Alur : Nerima domain struct, generate product.response
+	data, err := pr.Repo.GetProductByProdID(ctx, prodID)
+	if err != nil {
+		return nil, err
+	}
 
-	product, err := pr.Repo.DeleteProductByID(ctx, id)
+	//validasi ownership
+	if userID != data.UserId{
+		//http forbidden
+		return nil, errors.New("Must be your own products")
+	}
+
+	data, err = pr.Repo.DeleteProductByID(ctx, prodID)
 	if err != nil {
 		return nil, err
 	}
 	//aman
-	return pr.ToProductResponse(product), nil
+	return pr.ToProductResponse(data), nil
 }
