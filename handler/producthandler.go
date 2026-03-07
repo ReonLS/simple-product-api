@@ -47,7 +47,7 @@ func (ph *ProductHandler) GetProduct(rw http.ResponseWriter, r *http.Request) {
 	WriteJSON(rw, http.StatusOK, products)
 }
 
-// @Summary Inserting a product
+// @Summary Insert product
 // @description Insert product into user's product catalogue
 // @tags User
 // @accept json
@@ -91,7 +91,7 @@ func (ph *ProductHandler) InsertProduct(rw http.ResponseWriter, r *http.Request)
 	WriteJSON(rw, http.StatusCreated, response)
 }
 
-// @Summary Updating a product
+// @Summary Update product
 // @description Updating a user's product by its unique id
 // @tags User
 // @accept json
@@ -142,7 +142,7 @@ func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Requ
 	WriteJSON(rw, http.StatusOK, response)
 }
 
-// @Summary Deleting a product
+// @Summary Deleting product
 // @description Delete a user's product by its unique id
 // @tags User
 // @accept json
@@ -175,8 +175,8 @@ func (ph *ProductHandler) DeleteProductByID(rw http.ResponseWriter, r *http.Requ
 	WriteJSON(rw, http.StatusOK, response)
 }
 
-// @Summary Get all product
-// @description Returns all existing product
+// @Summary Get all user's product
+// @description Returns all product belonging to a user
 // @tags Admin
 // @accept json
 // @Produce json

@@ -174,7 +174,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns all existing product
+      description: Returns all product belonging to a user
       parameters:
       - description: User ID
         in: path
@@ -204,7 +204,7 @@ paths:
             $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Get all product
+      summary: Get all user's product
       tags:
       - Admin
   /admin/product:
@@ -551,7 +551,7 @@ paths:
             $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Inserting a product
+      summary: Insert product
       tags:
       - User
   /user/product/{id}:
@@ -588,7 +588,7 @@ paths:
             $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Deleting a product
+      summary: Deleting product
       tags:
       - User
     put:
@@ -634,7 +634,7 @@ paths:
             $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Updating a product
+      summary: Update product
       tags:
       - User
 securityDefinitions:

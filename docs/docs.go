@@ -246,7 +246,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all existing product",
+                "description": "Returns all product belonging to a user",
                 "consumes": [
                     "application/json"
                 ],
@@ -256,7 +256,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin"
                 ],
-                "summary": "Get all product",
+                "summary": "Get all user's product",
                 "parameters": [
                     {
                         "type": "string",
@@ -566,7 +566,7 @@ const docTemplate = `{
                 "tags": [
                     "User"
                 ],
-                "summary": "Inserting a product",
+                "summary": "Insert product",
                 "parameters": [
                     {
                         "description": "Insert Product",
@@ -632,7 +632,7 @@ const docTemplate = `{
                 "tags": [
                     "User"
                 ],
-                "summary": "Updating a product",
+                "summary": "Update product",
                 "parameters": [
                     {
                         "type": "string",
@@ -703,7 +703,7 @@ const docTemplate = `{
                 "tags": [
                     "User"
                 ],
-                "summary": "Deleting a product",
+                "summary": "Deleting product",
                 "parameters": [
                     {
                         "type": "string",
