@@ -26,24 +26,24 @@ type User struct {
 // Update & Register
 type UserRequest struct {
 	Name     string `json:"name" example:"John"`
-	Email    string `json:"email" example:"john@gmail.com"`
+	Email    string `json:"email" example:"john@example.com"`
 	Password string `json:"password" example:"john1234"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" example:"john@gmail.com"`
+	Email    string `json:"email" example:"john@example.com"`
 	Password string `json:"password" example:"john1234"`
 }
 
 type UserResponse struct {
 	Id    string `json:"id" example:"4dc0e876-8f8a-41c4-be90-e35da0105ccf"`
 	Name     string `json:"name" example:"John"`
-	Email    string `json:"email" example:"john@gmail.com"`
+	Email    string `json:"email" example:"john@example.com"`
 }
 
 type AdminUserResponse struct {
 	Id    string `json:"id" example:"4dc0e876-8f8a-41c4-be90-e35da0105ccf"`
 	Name     string `json:"name" example:"John"`
-	Email    string `json:"email" example:"john@gmail.com"`
+	Email    string `json:"email" example:"john@example.com"`
 	Role  utils.Role `json:"role" example:"User"`
 }

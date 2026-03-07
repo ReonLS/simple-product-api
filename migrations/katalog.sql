@@ -40,9 +40,6 @@ CREATE TABLE `product` (
 -- Dumping data for table `product`
 --
 
-INSERT INTO `product` (`id`, `userid`, `namaprod`, `kategori`, `price`, `stock`) VALUES
-('a905746a-f644-4005-bf6b-ca06e7a652b8', '5da48bc0-c695-4fec-a358-fffb7f61f562', 'Versase', 'Baju', 50.9, 12);
-
 -- --------------------------------------------------------
 
 --
@@ -62,9 +59,7 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` (`id`, `name`, `password`, `email`, `role`) VALUES
-('5da48bc0-c695-4fec-a358-fffb7f61f562', 'Rio Jerniko', '$2a$10$buIpt.Y4zd0NJ/Ie9uz0TOd8UO4TlfXynjyUqNAe49mgtXjfHfbz6', 'rio@gmail.com', 'User'),
-('b30a37f5-b89a-4190-8651-bdbd1c403c73', 'Axel', '$2a$10$VPQE6gx1wrDCV8THjoh8be2gfPMyM9zkHwT9eVjqTmu9HH/f.wfRe', 'axel@gmail.com', 'User'),
-('c1862178-e659-4091-99fd-1e34b66dd965', 'Rexi Leon', '$2a$10$cmdnfP9XoGzgmynaKP7ale85ACI/0xcKUswUeMCscxprKEQ2emF4i', 'rexi@gmail.com', 'Admin');
+('5da48bc0-c695-4fec-a358-fffb7f61f562', 'Admin', '$2a$10$RgAZKP0nEN5hDl7rRzZM8ONyBIx0TShG3zgdRsfcaOdXi9UIsm24q', 'admin@example.com', 'Admin');
 
 --
 -- Indexes for dumped tables

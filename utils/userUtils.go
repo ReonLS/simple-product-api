@@ -18,9 +18,9 @@ func ValidateRequest(name string, email string, password string) []error {
 
 	//validasi nama
 	if name == "" || len(strings.TrimSpace(name)) == 0 {
-		listErr = append(listErr, errors.New("Name must not be empty!"))
+		listErr = append(listErr, errors.New("Name must not be empty"))
 	} else if len(name) <= 2 {
-		listErr = append(listErr, errors.New("Name must be at least 3 Characters long!"))
+		listErr = append(listErr, errors.New("Name must be at least 3 Characters long"))
 	}
 
 	//validasi email
@@ -66,9 +66,9 @@ func validateEmail(email string) []error {
 	var listErr []error
 
 	if email == "" || len(strings.TrimSpace(email)) == 0 {
-		listErr = append(listErr, errors.New("Email May Not Be Empty!"))
+		listErr = append(listErr, errors.New("Email must not be empty"))
 	} else if _, err := mail.ParseAddress(email); err != nil {
-		listErr = append(listErr, errors.New("Invalid Email Format"))
+		listErr = append(listErr, errors.New("Invalid email format"))
 	}
 
 	return listErr
@@ -78,9 +78,9 @@ func validatePassword(Password string) []error {
 	var listErr []error
 
 	if Password == "" || len(strings.TrimSpace(Password)) == 0 {
-		listErr = append(listErr, errors.New("Password must not be empty!"))
+		listErr = append(listErr, errors.New("Password must not be empty"))
 	} else if len(Password) <= 7 {
-		listErr = append(listErr, errors.New("Password must be at least 8 Characters long!"))
+		listErr = append(listErr, errors.New("Password must be at least 8 Characters long"))
 	}
 
 	return listErr

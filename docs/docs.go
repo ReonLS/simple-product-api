@@ -15,6 +15,55 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin/product": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all existing product",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get all product",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AdminProductResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.ForbiddenResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/user": {
             "get": {
                 "security": [
@@ -129,9 +178,7 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/admin/user{id}": {
+            },
             "delete": {
                 "security": [
                     {
@@ -199,7 +246,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve all user's product by their unique id",
+                "description": "Returns all existing product",
                 "consumes": [
                     "application/json"
                 ],
@@ -209,7 +256,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin"
                 ],
-                "summary": "Admin get all specific user's Product",
+                "summary": "Get all product",
                 "parameters": [
                     {
                         "type": "string",
@@ -225,7 +272,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.AdminProductResponse"
+                                "$ref": "#/definitions/models.UserProductResponse"
                             }
                         }
                     },
@@ -737,7 +784,7 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "john@gmail.com"
+                    "example": "john@example.com"
                 },
                 "id": {
                     "type": "string",
@@ -801,7 +848,7 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "john@gmail.com"
+                    "example": "john@example.com"
                 },
                 "password": {
                     "type": "string",
@@ -881,7 +928,7 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "john@gmail.com"
+                    "example": "john@example.com"
                 },
                 "name": {
                     "type": "string",
@@ -898,7 +945,7 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "john@gmail.com"
+                    "example": "john@example.com"
                 },
                 "id": {
                     "type": "string",

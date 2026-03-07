@@ -2,7 +2,7 @@ services:
   db:
     image: mariadb:10.4
     environment:
-      MYSQL_ROOT_PASSWORD: rootv
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: katalog
     ports:
       - "3306:3306"

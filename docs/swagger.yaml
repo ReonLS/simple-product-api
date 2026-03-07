@@ -25,7 +25,7 @@ definitions:
   models.AdminUserResponse:
     properties:
       email:
-        example: john@gmail.com
+        example: john@example.com
         type: string
       id:
         example: 4dc0e876-8f8a-41c4-be90-e35da0105ccf
@@ -68,7 +68,7 @@ definitions:
   models.LoginRequest:
     properties:
       email:
-        example: john@gmail.com
+        example: john@example.com
         type: string
       password:
         example: john1234
@@ -121,7 +121,7 @@ definitions:
   models.UserRequest:
     properties:
       email:
-        example: john@gmail.com
+        example: john@example.com
         type: string
       name:
         example: John
@@ -133,7 +133,7 @@ definitions:
   models.UserResponse:
     properties:
       email:
-        example: john@gmail.com
+        example: john@example.com
         type: string
       id:
         example: 4dc0e876-8f8a-41c4-be90-e35da0105ccf
@@ -174,13 +174,44 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve all user's product by their unique id
+      description: Returns all existing product
       parameters:
       - description: User ID
         in: path
         name: id
         required: true
         type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.UserProductResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ForbiddenResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all product
+      tags:
+      - Admin
+  /admin/product:
+    get:
+      consumes:
+      - application/json
+      description: Returns all existing product
       produces:
       - application/json
       responses:
@@ -204,7 +235,7 @@ paths:
             $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Admin get all specific user's Product
+      summary: Get all product
       tags:
       - Admin
   /admin/user:
@@ -243,45 +274,6 @@ paths:
       tags:
       - Admin
   /admin/user/{id}:
-    get:
-      consumes:
-      - application/json
-      description: get user profile by their unique ID
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.AdminUserResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.BadRequestResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/models.UnauthorizedResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/models.ForbiddenResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Admin get user profile
-      tags:
-      - Admin
-  /admin/user{id}:
     delete:
       consumes:
       - application/json
@@ -318,6 +310,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Admin delete user
+      tags:
+      - Admin
+    get:
+      consumes:
+      - application/json
+      description: get user profile by their unique ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AdminUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.BadRequestResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ForbiddenResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Admin get user profile
       tags:
       - Admin
   /login:

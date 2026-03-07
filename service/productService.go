@@ -57,11 +57,10 @@ func (pr *ProductService) GetUserProduct(ctx context.Context, userID string) ([]
 	return dataResp, nil
 }
 
-func (pr *ProductService) AdminGetUserProduct(ctx context.Context, id string) ([]*models.AdminProductResponse, error) {
-	//Alur : Nerima domain struct, transform jadi response
+func (pr *ProductService) AdminGetAllProduct(ctx context.Context) ([]*models.AdminProductResponse, error) {
 	var dataResp []*models.AdminProductResponse
 
-	data, err := pr.Repo.GetProductByUserID(ctx, id)
+	data, err := pr.Repo.AdminGetAllProduct(ctx)
 	if err != nil {
 		return nil, err
 	}

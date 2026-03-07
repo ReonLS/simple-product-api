@@ -22,12 +22,12 @@ func ValidateProduct(namaprod string, kategori string, price float64, stock int)
 
 	//validasi nama
 	if namaprod == "" || len(strings.TrimSpace(namaprod)) == 0 {
-		listErr = append(listErr, errors.New("Name must not be empty!"))
+		listErr = append(listErr, errors.New("Name must not be empty"))
 	}
 
 	//validasi kategori
 	if kategori == "" || len(strings.TrimSpace(kategori)) == 0 {
-		listErr = append(listErr, errors.New("Category must not be empty!"))
+		listErr = append(listErr, errors.New("Category must not be empty"))
 	} else {
 		//ngecek kategori dengan setiap valid Category, valid jd true kalo kategori == string(each)
 		valid := false
@@ -40,7 +40,7 @@ func ValidateProduct(namaprod string, kategori string, price float64, stock int)
 			}
 		}
 		if !valid {
-			listErr = append(listErr, errors.New("Category not in list"))
+			listErr = append(listErr, errors.New("Category not in list <Baju, Aksesoris, Alas Kaki, Dalaman>"))
 		}
 	}
 

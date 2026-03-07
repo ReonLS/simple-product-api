@@ -7,6 +7,7 @@ import (
 
 // repository pattern
 type ProductRepository interface {
+	AdminGetAllProduct(ctx context.Context) ([]*Product, error)
 	GetProductByUserID(ctx context.Context, userID string) ([]*Product, error) //id dari context
 	GetProductByProdID(ctx context.Context, prodID string) (*Product, error)   //id dari context
 	InsertProduct(ctx context.Context, userID string, req *Product) (*Product, error)

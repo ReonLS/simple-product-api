@@ -33,10 +33,6 @@ func NewProductHandler(service *service.ProductService) *ProductHandler {
 // @Router /user/product [GET]
 // @Security BearerAuth
 func (ph *ProductHandler) GetProduct(rw http.ResponseWriter, r *http.Request) {
-	//Alur : Nerima response, encode jadi json
-	rw.Header().Set("Content-Type", "application/json")
-
-	//placeholder ngambils claims dari context, ambil id
 	claims, ok := utils.GetClaimsFromContext(r.Context())
 	if !ok {
 		GenerateError(rw, "No Information", http.StatusUnauthorized)
@@ -48,16 +44,7 @@ func (ph *ProductHandler) GetProduct(rw http.ResponseWriter, r *http.Request) {
 		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//berarti aman
-	rw.WriteHeader(http.StatusOK)
-
-	//Best Approach, more memory efficient
-	err = json.NewEncoder(rw).Encode(products)
-	if err != nil {
-		//server-side error
-		GenerateError(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	WriteJSON(rw, http.StatusOK, products)
 }
 
 // @Summary Inserting a product
@@ -74,56 +61,34 @@ func (ph *ProductHandler) GetProduct(rw http.ResponseWriter, r *http.Request) {
 // @Router /user/product [POST]
 // @Security BearerAuth
 func (ph *ProductHandler) InsertProduct(rw http.ResponseWriter, r *http.Request) {
-	//Alur real life : nerima json -> decode dan simpan di tampungan, exec query, generate respon
-	rw.Header().Set("Content-Type", "application/json")
-
-	//membuat tampungan
 	var req = &models.ProductRequest{}
-	err := json.NewDecoder(r.Body).Decode(&req)
-	defer r.Body.Close()
-
-	if err != nil {
-		//dianggap client salah kirim input
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil{
 		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	//validasi input
+	defer r.Body.Close()
+	
 	if err := utils.ValidateProduct(req.Namaprod, string(req.Kategori), req.Price, req.Stock); len(err) > 0 {
-		//Access setiap error, join ke joinedError, return sebagai message
 		var joinedError []string
 		for _, each := range err {
 			joinedError = append(joinedError, each.Error())
 		}
-
-		GenerateError(rw, strings.Join(joinedError, "\n"), http.StatusBadRequest)
+		GenerateError(rw, strings.Join(joinedError, " ,"), http.StatusBadRequest)
 		return
 	}
 
-	//ambil userid from context
 	claims, ok := utils.GetClaimsFromContext(r.Context())
 	if !ok {
 		GenerateError(rw, "No Information", http.StatusUnauthorized)
 		return
 	}
 
-	//logikanya gagal kebentuk, berarti user kirim faulty request
 	response, err := ph.Service.InsertProduct(r.Context(), claims.Id, req)
 	if err != nil {
 		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	//return status http object berhasil dibentuk
-	rw.WriteHeader(http.StatusCreated)
-
-	//tampilin di endpoint sbg response request client
-	err = json.NewEncoder(rw).Encode(response)
-	if err != nil {
-		//server-side error
-		GenerateError(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	WriteJSON(rw, http.StatusCreated, response)
 }
 
 // @Summary Updating a product
@@ -141,60 +106,40 @@ func (ph *ProductHandler) InsertProduct(rw http.ResponseWriter, r *http.Request)
 // @Router /user/product/{id} [PUT]
 // @Security BearerAuth
 func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Request) {
-	//alur : set header, take id from url.path, decode req.body, call service func, generate respons
-	rw.Header().Set("Content-Type", "application/json")
-
-	//Parsing id form path, validation
 	prodID := chi.URLParam(r, "id")
 	if _, err := uuid.Parse(prodID); err != nil {
-		GenerateError(rw, "Invalid ID", http.StatusBadRequest)
-		return
-	}
-
-	//tampungan decode
-	var req = &models.ProductRequest{}
-	err := json.NewDecoder(r.Body).Decode(&req)
-	defer r.Body.Close()
-
-	if err != nil {
 		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	//validasi input
+	var req = &models.ProductRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil{
+		GenerateError(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
 	if err := utils.ValidateProduct(req.Namaprod, string(req.Kategori), req.Price, req.Stock); len(err) > 0 {
-		//Access setiap error, join ke joinedError, return sebagai message
 		var joinedError []string
 		for _, each := range err {
 			joinedError = append(joinedError, each.Error())
 		}
-
-		GenerateError(rw, strings.Join(joinedError, "\n"), http.StatusBadRequest)
+		GenerateError(rw, strings.Join(joinedError, " ,"), http.StatusBadRequest)
 		return
 	}
 
-	//ambil userId from Claims
 	claims, ok := utils.GetClaimsFromContext(r.Context())
 	if !ok {
 		GenerateError(rw, "Need Authorization", http.StatusUnauthorized)
 		return
 	}
 
-	//panggil service func
 	response, err := ph.Service.UpdateProductByID(r.Context(), prodID, claims.Id, req)
 	if err != nil {
 		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//berarti aman
-	rw.WriteHeader(http.StatusOK)
-
-	//encode update untuk write ke stream
-	err = json.NewEncoder(rw).Encode(response)
-	if err != nil {
-		GenerateError(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	WriteJSON(rw, http.StatusOK, response)
 }
 
 // @Summary Deleting a product
@@ -210,76 +155,69 @@ func (ph *ProductHandler) UpdateProductByID(rw http.ResponseWriter, r *http.Requ
 // @Router /user/product/{id} [DELETE]
 // @Security BearerAuth
 func (ph *ProductHandler) DeleteProductByID(rw http.ResponseWriter, r *http.Request) {
-	//alur : set header -> ambil ID dari url, decode, jalankan query, encode, response
-	rw.Header().Set("Content-Type", "application/json")
-
-	//Parsing id form path, validation
 	prodID := chi.URLParam(r, "id")
 	if _, err := uuid.Parse(prodID); err != nil {
-		GenerateError(rw, "Invalid ID", http.StatusBadRequest)
+		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	//ambil userId from Claims
 	claims, ok := utils.GetClaimsFromContext(r.Context())
 	if !ok {
 		GenerateError(rw, "Need Authorization", http.StatusUnauthorized)
 		return
 	}
 
-	//jalankan query
 	response, err := ph.Service.DeleteProductByID(r.Context(), prodID, claims.Id)
 	if err != nil {
 		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//berarti aman
-	rw.WriteHeader(http.StatusOK)
-
-	//tembak ke stream
-	err = json.NewEncoder(rw).Encode(response)
-	if err != nil {
-		GenerateError(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	WriteJSON(rw, http.StatusOK, response)
 }
 
-// @Summary Admin get all specific user's Product
-// @description Retrieve all user's product by their unique id
+// @Summary Get all product
+// @description Returns all existing product
 // @tags Admin
 // @accept json
 // @Produce json
-// @Param id path string true "User ID"
-// @Success 200 {array} models.AdminProductResponse
+// @param id path string true "User ID"
+// @Success 200 {array} models.UserProductResponse
 // @Failure 401 {object} models.UnauthorizedResponse 
 // @Failure 403 {object} models.ForbiddenResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Router /admin/{id}/product [GET]
 // @Security BearerAuth
 func (ph *ProductHandler) AdminGetProductUser(rw http.ResponseWriter, r *http.Request) {
-	//Alur : Nerima response, encode jadi json
-	rw.Header().Set("Content-Type", "application/json")
-
-	//Parsing id form path, validation
 	userID := chi.URLParam(r, "id")
 	if _, err := uuid.Parse(userID); err != nil {
-		GenerateError(rw, "Invalid ID", http.StatusBadRequest)
+		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	products, err := ph.Service.AdminGetUserProduct(r.Context(), userID)
+	response, err := ph.Service.GetUserProduct(r.Context(), userID)
 	if err != nil {
 		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//berarti aman
-	rw.WriteHeader(http.StatusOK)
+	WriteJSON(rw, http.StatusOK, response)
+}
 
-	//Best Approach, more memory efficient
-	err = json.NewEncoder(rw).Encode(products)
+// @Summary Get all product
+// @description Returns all existing product
+// @tags Admin
+// @accept json
+// @Produce json
+// @Success 200 {array} models.AdminProductResponse
+// @Failure 401 {object} models.UnauthorizedResponse 
+// @Failure 403 {object} models.ForbiddenResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /admin/product [GET]
+// @Security BearerAuth
+func (ph *ProductHandler) AdminGetAllProduct(rw http.ResponseWriter, r *http.Request) {
+	response, err := ph.Service.AdminGetAllProduct(r.Context())
 	if err != nil {
-		//server-side error
-		GenerateError(rw, err.Error(), http.StatusInternalServerError)
+		GenerateError(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
+	WriteJSON(rw, http.StatusOK, response)
 }

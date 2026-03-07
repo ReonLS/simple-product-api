@@ -16,8 +16,6 @@ func NewProductRepo(db *sql.DB) *ProductRepo {
 }
 
 func (pr *ProductRepo) GetProductByUserID(ctx context.Context, userID string) ([]*models.Product, error) {
-	//Alur : Generate query, return domain struct
-
 	var data []*models.Product
 
 	rows, err := pr.DB.QueryContext(ctx, "Select * from product where userid = ?", userID)
@@ -38,9 +36,26 @@ func (pr *ProductRepo) GetProductByUserID(ctx context.Context, userID string) ([
 	return data, nil
 }
 
-func (pr *ProductRepo) GetProductByProdID(ctx context.Context, prodID string) (*models.Product, error) {
-	//Alur : Generate query, return domain struct
+func (ur *ProductRepo) AdminGetAllProduct(ctx context.Context) ([]*models.Product, error) {
+	var data []*models.Product
 
+	rows, err := ur.DB.QueryContext(ctx, "Select id, userid, namaprod, kategori, price, stock from product")
+	if err != nil {
+		return nil, errors.New("Query Gagal")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var row = &models.Product{}
+		if err := rows.Scan(&row.Id, &row.UserId, &row.Namaprod, &row.Kategori, &row.Price, &row.Stock); err != nil {
+			return nil, errors.New("Scannya gagal")
+		}
+		data = append(data, row)
+	}
+	return data, nil
+}
+
+func (pr *ProductRepo) GetProductByProdID(ctx context.Context, prodID string) (*models.Product, error) {
 	var data = &models.Product{}
 
 	res := pr.DB.QueryRowContext(ctx, "Select * from product where id = ?", prodID)
@@ -52,7 +67,6 @@ func (pr *ProductRepo) GetProductByProdID(ctx context.Context, prodID string) (*
 	if err != nil {
 		return nil, err
 	}
-	//semua aman
 	return data, nil
 }
 
@@ -101,13 +115,8 @@ func (pr *ProductRepo) UpdateProductByID(ctx context.Context, prodID string, pro
 	return product, nil
 }
 
-// in proper api, query ttp delete unique product id, tp middleware yg bakal authenticate user
-// untuk ensure product ini milik currentuserloginid
 func (pr *ProductRepo) DeleteProductByID(ctx context.Context, id string) (*models.Product, error) {
-	//Alur : Jalanin query, return domain struct (ngamnbil id dari hasil auto increment table)
-
 	var product = &models.Product{}
-	//query select based id, untuk dpt info deleted baru jalanin delete query
 	err := pr.DB.QueryRowContext(ctx, "select * from product where id = ?", id).
 		Scan(&product.Id, &product.UserId, &product.Namaprod, &product.Kategori, &product.Price, &product.Stock)
 
@@ -126,6 +135,5 @@ func (pr *ProductRepo) DeleteProductByID(ctx context.Context, id string) (*model
 	if rowsAff == 0 {
 		return nil, errors.New("Product Not Found!")
 	}
-	//artinya aman
 	return product, nil
 }
