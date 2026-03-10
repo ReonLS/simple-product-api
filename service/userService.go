@@ -5,7 +5,6 @@ import (
 	"errors"
 	"simple-product-api/models"
 	"simple-product-api/utils"
-
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -37,16 +36,12 @@ func ToUserResponse(user *models.User) *models.UserResponse {
 }
 
 func (us *UserService) Register(ctx context.Context, req *models.UserRequest) (*models.UserResponse, error) {
-
-	//panggil fungsi hash password, hasilnya diset sebagai password data
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
-	//Unique email check
 	data, err := us.Repo.FindByEmail(ctx, req.Email)
-	//either email gk ketemu (bagus) or mmg error waktu exec query
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +67,8 @@ func (us *UserService) Register(ctx context.Context, req *models.UserRequest) (*
 
 func (ur *UserService) Login(ctx context.Context, req *models.LoginRequest) (string, error) {
 	data, err := ur.Repo.FindByEmail(ctx, req.Email)
-	if err != nil {
-		return "", err
+	if data == nil {
+		return "", errors.New("User account does not exist")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(data.Password), []byte(req.Password))

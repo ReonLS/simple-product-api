@@ -17,7 +17,6 @@ func NewProductService(repo models.ProductRepository) *ProductService {
 }
 
 func (pr *ProductService) ToProductResponse(p *models.Product) *models.UserProductResponse {
-	//transform dari domain struct(db) jd response (json-embedded)
 	return &models.UserProductResponse{
 		Id:       p.Id,
 		Namaprod: p.Namaprod,
@@ -28,7 +27,6 @@ func (pr *ProductService) ToProductResponse(p *models.Product) *models.UserProdu
 }
 
 func (pr *ProductService) ToAdminProductResponse(p *models.Product) *models.AdminProductResponse {
-	//transform dari domain struct(db) jd response (json-embedded)
 	return &models.AdminProductResponse{
 		Id:       p.Id,
 		UserId:   p.UserId,
@@ -40,7 +38,6 @@ func (pr *ProductService) ToAdminProductResponse(p *models.Product) *models.Admi
 }
 
 func (pr *ProductService) GetUserProduct(ctx context.Context, userID string) ([]*models.UserProductResponse, error) {
-	//Alur : Nerima domain struct, transform jadi response
 	var dataResp []*models.UserProductResponse
 
 	data, err := pr.Repo.GetProductByUserID(ctx, userID)
@@ -48,12 +45,10 @@ func (pr *ProductService) GetUserProduct(ctx context.Context, userID string) ([]
 		return nil, err
 	}
 
-	//for loop access masing2
 	for _, rows := range data {
 		dataResp = append(dataResp, pr.ToProductResponse(rows))
 	}
 
-	//aman berarti
 	return dataResp, nil
 }
 
@@ -65,17 +60,14 @@ func (pr *ProductService) AdminGetAllProduct(ctx context.Context) ([]*models.Adm
 		return nil, err
 	}
 
-	//for loop access masing2
 	for _, rows := range data {
 		dataResp = append(dataResp, pr.ToAdminProductResponse(rows))
 	}
 
-	//aman berarti
 	return dataResp, nil
 }
 
 func (pr *ProductService) InsertProduct(ctx context.Context, userid string, req *models.ProductRequest) (*models.UserProductResponse, error) {
-	//Alur : Nerima domain struct, generate product.response
 	var data = &models.Product{
 		Id:       uuid.New().String(),
 		UserId:   userid,
@@ -90,26 +82,20 @@ func (pr *ProductService) InsertProduct(ctx context.Context, userid string, req 
 		return nil, err
 	}
 
-	//aman
 	return pr.ToProductResponse(product), nil
 }
 
 func (pr *ProductService) UpdateProductByID(ctx context.Context, ProdID string, userID string, req *models.ProductRequest) (*models.UserProductResponse, error) {
-	//Alur : Nerima domain struct, generate product.response
-
-	//compare userID.ctx & userID.repo
 	data, err := pr.Repo.GetProductByProdID(ctx, ProdID)
 	if err != nil {
 		return nil, err
 	}
 
-	//validasi ownership
 	if userID != data.UserId {
 		//http forbidden
 		return nil, errors.New("Must be your own products")
 	}
 
-	//replace dgn req's info
 	data.Id = ProdID
 	data.Namaprod = req.Namaprod
 	data.Kategori = req.Kategori
@@ -121,18 +107,15 @@ func (pr *ProductService) UpdateProductByID(ctx context.Context, ProdID string, 
 		return nil, err
 	}
 
-	//aman
 	return pr.ToProductResponse(product), nil
 }
 
 func (pr *ProductService) DeleteProductByID(ctx context.Context, prodID string, userID string) (*models.UserProductResponse, error) {
-	//Alur : Nerima domain struct, generate product.response
 	data, err := pr.Repo.GetProductByProdID(ctx, prodID)
 	if err != nil {
 		return nil, err
 	}
 
-	//validasi ownership
 	if userID != data.UserId {
 		//http forbidden
 		return nil, errors.New("Must be your own products")
@@ -142,6 +125,5 @@ func (pr *ProductService) DeleteProductByID(ctx context.Context, prodID string, 
 	if err != nil {
 		return nil, err
 	}
-	//aman
 	return pr.ToProductResponse(data), nil
 }
